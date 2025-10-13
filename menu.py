@@ -63,8 +63,9 @@ class Menu:
             # Unknown button, ignore
             return
 
-        # Small delay for button debounce
-        wait(150)
+        wait(300)  # Debounce delay
+        print("Button  pressed")
+
 
     def select_previous_section(self):
         self.course.current_section_index = (self.course.current_section_index - 1) % len(self.course.sections)

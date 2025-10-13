@@ -6,14 +6,14 @@ class SectionFollowLine(Section):
     def __init__(self):
         super().__init__()
         self.name = "Follow Line"
-        self.UNDERGROUND_REFLECTION = 9          # Average reflection of the ground
+        self.UNDERGROUND_REFLECTION = 0          # Average reflection of the ground
         self.UNDERGROUND_DELTA = 10          # Highest reflection we still consider as pure ground without a line
-        self.LINE_REFLECTION = 85
-        self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 2
-        self.REFLECTION_RANGE = self.LINE_REFLECTION - self.UNDERGROUND_REFLECTION
-        self.DRIVE_SPEED = 30                   # mm/s
-        self.SEARCH_DRIVE_SPEED = 20
-        self.PROPORTIONAL_GAIN = .5               # Higher value means a "shakier" adjustment
+        self.LINE_REFLECTION = 100
+        self.PROPORTIONAL_GAIN = .6  # Proportional gain for the P-controller
+        self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 200  # Target reflection value between ground and line
+        self.REFLECTION_RANGE = None
+        self.DRIVE_SPEED = 120                   
+        self.SEARCH_DRIVE_SPEED = 20           # Higher value means a "shakier" adjustment
         self.SEARCH_WIDTH_ANGLE = 200            # Width of the search angle when the line is lost
         self.angle_turned_since_line_lost = 0    # Track how much the robot has turned since losing the line
         self.line_lost = False
@@ -32,6 +32,7 @@ class SectionFollowLine(Section):
         self.angle_turned_since_line_lost = 0
         self.line_lost = False
         self.line_gap = False
+        robot.stop()
 
     def run_one_step(self, robot):
         #if self.check_for_blue_line(robot):
@@ -41,31 +42,36 @@ class SectionFollowLine(Section):
         #    robot.reset_distance_and_angle()
         #    return
 
+        '''
         if self.STATE_CALIBRATING == self.state:
             self.calibrate(robot)
             self.state = self.STATE_SEEING_LINE
             return
+        '''
 
-        reflection = robot.color_sensor.reflection()
+        rgb = robot.color_sensor.rgb()
+        reflection = (rgb[0] + rgb[1] + rgb[2]) / 300  
+        print(reflection)
 
-
-        seeing_line = reflection > self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA  # boolean
-
-        if seeing_line:
+        
+        
+        if True:
             self.state = self.STATE_SEEING_LINE
             self.angle_turned_since_line_lost = 0
 
             # Line-following using a P-controller
             deviation = reflection - self.TARGET_VALUE
             correction = deviation * self.PROPORTIONAL_GAIN
-            straight_speed = self.DRIVE_SPEED * (1 - abs(deviation / (self.REFLECTION_RANGE / 2)))
-            robot.drive(straight_speed, turn_rate=correction)
-
+            straight_speed = self.DRIVE_SPEED * (.5-abs(correction))
+            robot.drive(straight_speed, turn_rate=correction*self.DRIVE_SPEED*2)
+        '''
         else:  # NOT SEEING LINE
             robot.stop()
             robot.ev3.speaker.beep()
             return
-            '''
+            
+        
+            
             self.angle_turned_since_line_lost = robot.angle_turned()
 
             if self.state == self.STATE_SEEING_LINE:
@@ -92,7 +98,7 @@ class SectionFollowLine(Section):
 
             else:
                 raise Exception('Calling a non-existing State')
-            '''
+        '''            
 
     def calibrate(self, robot):
         # Calibrate the color sensor for ground and line
