@@ -82,3 +82,4 @@ class Menu:
         self.course.running = False
         self.course.sections[self.course.current_section_index].reset(self.robot)
         print("Parcour aborted.")
+        self.update()

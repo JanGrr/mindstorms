@@ -10,9 +10,9 @@ class Robot:
         self.ev3 = EV3Brick()
         self.motor_left = Motor(Port.A, Direction.COUNTERCLOCKWISE, gears=None)                                         # oder COUNTERCLOCKWISE, Gears z.B. [14, 20]
         self.motor_right = Motor(Port.B, Direction.COUNTERCLOCKWISE, gears=None)
-        self.WHEEL_DIAMETER_MM = 80                                 # Raddurchmesser der Antriebsräder in mm
+        self.WHEEL_DIAMETER_MM = 55                                 # Raddurchmesser der Antriebsräder in mm
                                                                     # Wenn der Roboter bei straight(1000) nicht weit genug fährt, WHEEL_DIAMETER_MM leicht verringern
-        self.AXLE_TRACK_MM = 120                                    # Abstand der beiden angetriebenen Räder voneinander in mm
+        self.AXLE_TRACK_MM = 105                                   # Abstand der beiden angetriebenen Räder voneinander in mm
                                                                     # Wenn der Roboter bei spin(360) weniger als 360° dreht, AXLE_TRACK_MM leicht erhöhen (aber immer erst WHEEL_DIAMETER_MM anpassen)
         self.drive_base = DriveBase(self.motor_left, self.motor_right, self.WHEEL_DIAMETER_MM, self.AXLE_TRACK_MM)      # Klasse die bereits Fahrfunktionen implementiert
         self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
