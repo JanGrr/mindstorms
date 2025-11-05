@@ -1,101 +1,105 @@
 from .section import Section
-from enum import Enum
+
 
 class SectionFollowLine(Section):
 
-    class State(Enum):
-        SEEING_LINE = 1
-        LOST_LINE = 2
-        GAP_RIGHT_TURN = 3
-        GAP_LEFT_TURN = 4
-
     def __init__(self):
+        super().__init__()
         self.name = "Follow Line"
-        self.UNDERGROUND_REFLECTION = 9          # Durchschnittliche Reflection des Untergrunds
-        self.UNDERGROUND_THRESHOLD = 15         # höchste Reflection des Untergrunds, dass wir trotzdem noch denken es ist der reine Untergrund ohne Linie
+        self.UNDERGROUND_REFLECTION = 9          # Average reflection of the ground
+        self.UNDERGROUND_DELTA = 10          # Highest reflection we still consider as pure ground without a line
         self.LINE_REFLECTION = 85
         self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 2
-        self.DRIVE_SPEED = 100                   # mm/s
+        self.REFLECTION_RANGE = self.LINE_REFLECTION - self.UNDERGROUND_REFLECTION
+        self.DRIVE_SPEED = 30                   # mm/s
         self.SEARCH_DRIVE_SPEED = 20
-        self.PROPORTIONAL_GAIN = 1               # Je höher, desto "zitternder"
-        self.SEARCH_WIDTH_ANGLE = 200            # Wie breit der Suchwinkel nach links und rechts ist, wenn die Linie verloren wurde
-        self.angle_turned_since_line_lost = 0    # könnte man evtl weglassen & stattdessen delta berechnen!
+        self.PROPORTIONAL_GAIN = .5               # Higher value means a "shakier" adjustment
+        self.SEARCH_WIDTH_ANGLE = 200            # Width of the search angle when the line is lost
+        self.angle_turned_since_line_lost = 0    # Track how much the robot has turned since losing the line
         self.line_lost = False
         self.line_gap = False
-        self.state = State.SEEING_LINE
 
-    def reset(self):
+        # State names as strings instead of Enum
+        self.STATE_CALIBRATING = "CALIBRATING"
+        self.STATE_SEEING_LINE = "SEEING_LINE"
+        self.STATE_LOST_LINE = "LOST_LINE"
+        self.STATE_GAP_RIGHT_TURN = "GAP_RIGHT_TURN"
+        self.STATE_GAP_LEFT_TURN = "GAP_LEFT_TURN"
+
+        self.state = self.STATE_CALIBRATING
+
+    def reset(self, robot):
         self.angle_turned_since_line_lost = 0
         self.line_lost = False
         self.line_gap = False
 
-    # P-Regler, also berechnet die zu korrigierende Drehung proportional zur Abweichung von dem Sollwert (der rechten Linienkante)
     def run_one_step(self, robot):
-        if self.check_for_blue_line(robot):
-            self.finished = True
-            robot.stop()
-            robot.reset_distance_and_angle()
-            # TODO Celebration?
+        #if self.check_for_blue_line(robot):
+        #    print("Blue line detected, finishing section.")
+        #    self.finished = True
+        #    robot.stop()
+        #    robot.reset_distance_and_angle()
+        #    return
+
+        if self.STATE_CALIBRATING == self.state:
+            self.calibrate(robot)
+            self.state = self.STATE_SEEING_LINE
             return
 
         reflection = robot.color_sensor.reflection()
-        seeing_line = reflection > self.UNDERGROUND_THRESHOLD    # boolean
+
+
+        seeing_line = reflection > self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA  # boolean
 
         if seeing_line:
-            self.state = State.SEEING_LINE
+            self.state = self.STATE_SEEING_LINE
             self.angle_turned_since_line_lost = 0
 
-            # Linie entlang fahren mithilfe eines P-Reglers
+            # Line-following using a P-controller
             deviation = reflection - self.TARGET_VALUE
             correction = deviation * self.PROPORTIONAL_GAIN
-            robot.drive(self.DRIVE_SPEED, turn_rate=correction)
-        else: # NOT SEEING LINE
+            straight_speed = self.DRIVE_SPEED * (1 - abs(deviation / (self.REFLECTION_RANGE / 2)))
+            robot.drive(straight_speed, turn_rate=correction)
+
+        else:  # NOT SEEING LINE
+            robot.stop()
+            robot.ev3.speaker.beep()
+            return
+            '''
             self.angle_turned_since_line_lost = robot.angle_turned()
-            match self.state:
-                case State.SEEING_LINE: # Linie sollte nur verloren gehen, wenn starker Knick der Linie nach links (max. 90°) oder Lücke
-                    self.state = State.LOST_LINE
-                    robot.drive(0, 90)   # nach Links drehen mit 90°/s  # TODO vlt statt 0, doch bisschen Geschwindigkeit?
-                    robot.reset_distance_and_angle()
-                    # TODO Display oder Ton?
-                case State.LOST_LINE:
-                    # Wenn Linie verloren, dann maximal 100° nach Links drehen um zwischen starker Linkskurve und Lücke zu unterscheiden
-                    # Linie nicht wiedergefunden -> Lücke, also wieder gerade drehen und suchen
-                    if self.angle_turned_since_line_lost > 100:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-                        self.state = State.GAP_RIGHT_TURN
-                        robot.drive(self.SEARCH_DRIVE_SPEED, -90)
-                        # TODO Display oder Ton?
-                case State.GAP_RIGHT_TURN:                       # vlt muss statt < -45 eher < 315 genutzt werden? 
-                    if self.angle_turned_since_line_lost < -45:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-                        self.state = State.GAP_LEFT_TURN
-                        robot.drive(self.SEARCH_DRIVE_SPEED, 90)
-                case State.GAP_LEFT_TURN: 
-                    if self.angle_turned_since_line_lost > 45:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-                        self.state = State.GAP_RIGHT_TURN
-                        robot.drive(self.SEARCH_DRIVE_SPEED, -90)
-                case _:
-                    raise Exception('calling a non existing State')
-            
-            # falls match case nicht funktioniert
-            
-            # if self.state == State.SEEING_LINE:
-            #     self.state = State.LOST_LINE
-            #     robot.drive(0, 90)   # nach Links drehen mit 90°/s  # TODO vlt statt 0, doch bisschen Geschwindigkeit?
-            #     robot.reset_distance_and_angle()
-            #     # TODO Display oder Ton?
-            # elif self.state == State.LOST_LINE:
-            #     # Wenn Linie verloren, dann maximal 100° nach Links drehen um zwischen starker Linkskurve und Lücke zu unterscheiden
-            #     # Linie nicht wiedergefunden -> Lücke, also wieder gerade drehen und suchen
-            #     if self.angle_turned_since_line_lost > 100:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-            #         self.state = State.GAP_RIGHT_TURN
-            #         robot.drive(0, -90)
-            #         # TODO Display oder Ton?
-            # elif self.state == GAP_Right_TURN:
-            #     if self.angle_turned_since_line_lost > -45:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-            #         self.state = State.GAP_LEFT_TURN
-            #         robot.drive(20, 90)
-            # elif self.state == GAP_LEFT_TURN:
-            #     if self.angle_turned_since_line_lost > 45:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-            #         self.state = State.GAP_RIGHT_TURN
-            #         robot.drive(20, -90)
-            # else:
-            #     raise Exception('calling a non existing State')
+
+            if self.state == self.STATE_SEEING_LINE:
+                self.state = self.STATE_LOST_LINE
+                robot.drive(0, 90)  # Turn left at 90°/s
+                robot.reset_distance_and_angle()
+                # TODO: Display or sound indication
+
+            elif self.state == self.STATE_LOST_LINE:
+                if self.angle_turned_since_line_lost > 100:  # Has turned more than 100° since losing the line?
+                    self.state = self.STATE_GAP_RIGHT_TURN
+                    robot.drive(0, -90)  # Turn right
+                    # TODO: Display or sound indication
+
+            elif self.state == self.STATE_GAP_RIGHT_TURN:
+                if self.angle_turned_since_line_lost < -45:  # Check for left turn indication
+                    self.state = self.STATE_GAP_LEFT_TURN
+                    robot.drive(20, 90)  # Drive forward and turn left
+
+            elif self.state == self.STATE_GAP_LEFT_TURN:
+                if self.angle_turned_since_line_lost > 45:  # Check for right turn indication
+                    self.state = self.STATE_GAP_RIGHT_TURN
+                    robot.drive(20, -90)  # Drive forward and turn right
+
+            else:
+                raise Exception('Calling a non-existing State')
+            '''
+
+    def calibrate(self, robot):
+        # Calibrate the color sensor for ground and line
+        self.LINE_REFLECTION = robot.color_sensor.reflection()
+        print("Line reflection:", self.LINE_REFLECTION)
+        robot.spin(40)
+        robot.ev3.speaker.beep()
+        self.UNDERGROUND_REFLECTION = robot.color_sensor.reflection()
+        print("Ground reflection:", self.UNDERGROUND_REFLECTION)
+        robot.spin(-40)

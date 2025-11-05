@@ -1,18 +1,15 @@
-from abc import ABC, abstractmethod
 from pybricks.parameters import Color
 
-class Section(ABC):
+class Section:
 
-    @abstractmethod
     def __init__(self):
         self.name = ""
         self.finished = False
     
-    @abstractmethod
-    def reset(self):
+    def reset(self, robot):
         pass
 
-    @abstractmethod # true zurück geben, wenn Sektion beendet
+    # true zurück geben, wenn Sektion beendet
     def run_one_step(self, robot):
         pass
 
