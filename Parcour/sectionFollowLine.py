@@ -34,6 +34,7 @@ class SectionFollowLine(Section):
         if self.check_for_blue_line(robot):
             self.finished = True
             robot.stop()
+            robot.reset_distance_and_angle()
             # TODO Celebration?
             return
 
