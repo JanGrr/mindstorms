@@ -1,8 +1,8 @@
-from .section import Section
-from .sectionFollowLine import SectionFollowLine
-from .sectionMoveObject import SectionMoveObject
-from .sectionCrossBridge import SectionCrossBridge
-from .sectionSearchColorFields import SectionSearchColorFields
+from Parcour.section import Section
+from Parcour.sectionFollowLine import SectionFollowLine
+from Parcour.sectionMoveObject import SectionMoveObject
+from Parcour.sectionCrossBridge import SectionCrossBridge
+from Parcour.sectionSearchColorFields import SectionSearchColorFields
 
 class Parcour:
 

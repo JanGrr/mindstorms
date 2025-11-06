@@ -3,7 +3,7 @@ from pybricks.tools import wait
 
 class SectionMoveObject(Section):
 
-    class State(Enum):
+    class State:    # Enum
         FIRST_FOLLOW_WALL = 1
         SECOND_FOLLOW_WALL = 2
         THIRD_DRIVE_BACK = 3
@@ -14,6 +14,7 @@ class SectionMoveObject(Section):
         EIGTH_RELEASE_OBJECT = 8
 
     def __init__(self):
+        super().__init__()
         self.name = "Move Object"
         self.TARGET_WALL_DISTANCE_MM = 100
         self.PROPORTIONAL_GAIN = 1               # Je höher, desto "zitternder"
@@ -21,40 +22,41 @@ class SectionMoveObject(Section):
         self.DRIVE_SPEED_SLOW = 30
         self.state = State.FIRST_FOLLOW_WALL
 
-    def reset(self):
+    def reset(self, robot):
         self.state = State.FIRST_FOLLOW_WALL
 
     def run_one_step(self, robot):
-        match self.state:
-            case State.FIRST_FOLLOW_WALL:
-                if robot.driven_distance() == 600:
-                    robot.drive(self.DRIVE_SPEED, turn_rate=90)
-                    wait(1000)
-                    self.state = State.SECOND_FOLLOW_WALL
-                else:
-                    self.follow_wall(robot, 100)
-            case SECOND_FOLLOW_WALL:
-                if robot.ultrasonic_sensor.distance() < 50:         # Objekt erkannt
-                    robot.drive(DRIVE_SPEED_SLOW, turn_rate=70)
-                    wait(1000)
-                    robot.move_gripper_and_ultrasonic()
-                    robot.spin(angle=-45)                           # vlt lieber Gyro
-                    wait(1000)
-                    robot.straight(distance_mm=100)
-                    robot.move_gripper_and_ultrasonic()
-                    robot.straight(distance_mm=-500)
-                    robot.move_gripper_and_ultrasonic()
-                    robot.straight(distance_mm=-100)
-                    robot.spin()
-                    self.state = State.
-                else:
-                    self.follow_wall(robot, 100)
-            case THIRD_DRIVE_BACK:
-            case FORTH_SPIN:
-            case FIFTH_DRIVE_FORWARD:
-            case SIXTH_GRAB_OBJECT:
-            case SEVENTH_DRIVE_BACK:
-            case EIGTH_RELEASE_OBJECT:
+        if self.state == State.FIRST_FOLLOW_WALL:
+            if robot.driven_distance() == 600:
+                robot.drive(self.DRIVE_SPEED, turn_rate=90)
+                wait(1000)
+                self.state = State.SECOND_FOLLOW_WALL
+            else:
+                self.follow_wall(robot, 100)
+
+        elif self.state == State.SECOND_FOLLOW_WALL:
+            if robot.ultrasonic_sensor.distance() < 50:         # Objekt erkannt
+                robot.drive(DRIVE_SPEED_SLOW, turn_rate=70)
+                wait(1000)                                  # nicht mit waits arbeiten, wegen Akku
+                robot.move_gripper_and_ultrasonic()
+                robot.spin(angle=-45)                           # vlt lieber Gyro
+                wait(1000)
+                robot.straight(distance_mm=100)
+                robot.move_gripper_and_ultrasonic()
+                robot.straight(distance_mm=-500)
+                robot.move_gripper_and_ultrasonic()
+                robot.straight(distance_mm=-100)
+                self.state = State.THIRD_DRIVE_BACK
+            else:
+                self.follow_wall(robot, 100)
+
+        elif self.state == State.THIRD_DRIVE_BACK:
+        elif self.state == State.FORTH_SPIN:
+        elif self.state == State.FIFTH_DRIVE_FORWARD:
+        elif self.state == State.SIXTH_GRAB_OBJECT:
+        elif self.state == State.SEVENTH_DRIVE_BACK:
+        elif self.state == State.EIGTH_RELEASE_OBJECT:
+
         self.follow_wall(robot, 100, 'touch sensor')
         robot.spin(90)
         self.follow_wall(robot, 100, 'touch sensor')
