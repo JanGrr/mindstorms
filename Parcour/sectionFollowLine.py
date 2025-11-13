@@ -14,12 +14,20 @@ class SectionFollowLine(Section):
         self.PROPORTIONAL_GAIN = .5  # Proportional gain for the P-controller
         self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 2  # Target reflection value between ground and line
         self.not_seen_line_for = 0
-        self.SWITCH_TO_SEARCH_THRESHOLD = 15  # Number of consecutive readings below target to consider the line lost
+        self.SWITCH_TO_SEARCH_THRESHOLD = 5  # Number of consecutive readings below target to consider the line lost
 
         self.DRIVE_SPEED = 120                   
-        self.SEARCH_DRIVE_SPEED = 20           # Higher value means a "shakier" adjustment
-        self.SEARCH_WIDTH_ANGLE = 200            # Width of the search angle when the line is lost
+        self.SEARCH_DRIVE_SPEED = 20           # Higher value means a "shakier" adjustment          # Width of the search angle when the line is lost
         self.angle_turned_since_line_lost = 0    # Track how much the robot has turned since losing the line
+
+
+        # Search Mode States
+        self.SEARCH_DRIVE_SPEED = 50
+        self.SEARCH_TURN_SPEED = 60
+        self.SEARCH_TURN_ANGLE = 100         
+        self.degrees_when_lost = None
+
+        self.SEARCH_STATE = "TURNING_LEFT"
 
         # State names as strings instead of Enum
         self.STATE_CALIBRATING = "CALIBRATING"
@@ -66,8 +74,10 @@ class SectionFollowLine(Section):
             self.not_seen_line_for += 1
 
         if self.not_seen_line_for < self.SWITCH_TO_SEARCH_THRESHOLD:  
+            self.state = self.STATE_SEEING_LINE
             self.pControl(robot, reflection)
         else:  # NOT SEEING LINE
+            self.state = self.STATE_LOST_LINE
             self.searchMode(robot, reflection)
             
 
@@ -89,8 +99,15 @@ class SectionFollowLine(Section):
             robot.drive(straight_speed, turn_rate=correction*self.DRIVE_SPEED*2)
 
     def searchMode(self, robot, reflection):
-        robot.stop()
-        pass
+        if self.degrees_when_lost is None:
+            self.degrees_when_lost = robot.angle_turned()
+            
+        angle_turned_since_line_lost = robot.angle_turned() - self.degrees_when_lost
+        robot.drive_base.turn(self.SEARCH_TURN_SPEED)
+
+
+
+        
 
     def draw_info(self, robot):
         self.draw_info_in -= 1
@@ -101,8 +118,8 @@ class SectionFollowLine(Section):
 
 
         robot.ev3.screen.clear()
-        robot.ev3.screen.draw_text(0, 0, "Section: " + self.name)
+        robot.ev3.screen.draw_text(0, 0, self.name)
         rgb = robot.color_sensor.rgb()
         reflection = (rgb[0] + rgb[1] + rgb[2]) / 300  
         robot.ev3.screen.draw_text(0, 40, "Reflection: {:.2f}".format(reflection))
-        robot.ev3.screen.draw_text(0, 60, "line not seen:" + str(self.not_seen_line_for))
+        robot.ev3.screen.draw_text(0, 60, self.state)
