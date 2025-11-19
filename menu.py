@@ -1,4 +1,5 @@
 from pybricks.parameters import Button
+from pybricks.tools import wait
 
 
 class Menu:
@@ -39,8 +40,8 @@ class Menu:
             robot.ev3.speaker.say("Nur eine Taste drücken")
             return
 
-        if self.course.running and Button.BACK not in buttons_pressed:
-            robot.ev3.speaker.say("Bitte erst den Parcour abbrechen")
+        if self.course.running and Button.LEFT not in buttons_pressed:
+            self.robot.ev3.speaker.say("Bitte erst den Parcour abbrechen")
             return
 
         button = buttons_pressed[0]
@@ -60,6 +61,8 @@ class Menu:
         else:
             raise Exception("This button does nothing")
 
+        wait(100)  # die Tastendrücke werden sonst teilweise mehrfach erkannt
+
     def select_previous_section(self):
         self.course.current_section_index = (self.course.current_section_index - 1) % len(self.course.sections)
         self.update()
@@ -70,9 +73,10 @@ class Menu:
 
     def confirm_selection(self):
         self.course.running = True
-    
+        self.course.sections[self.course.current_section_index].update_section_screen(self.robot)
+        self.course.sections[self.course.current_section_index].update_section_screen(self.robot, status ="on line")
+
     def abort_parcour(self):
         self.course.running = False
         self.course.sections[self.course.current_section_index].reset(self.robot)
-        self.robot.ev3.speaker.beep()
- 
+        self.update()

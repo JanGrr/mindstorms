@@ -3,8 +3,11 @@ from pybricks.parameters import Color
 class Section:
 
     def __init__(self):
-        self.name = ""
+        self.name = "Section"
         self.finished = False
+    
+    def get_name(self):
+        return self.name
     
     def reset(self, robot):
         pass
@@ -14,10 +17,13 @@ class Section:
         pass
 
     def check_for_blue_line(self, robot):
-        return robot.color_sensor.color() == Color.BLUE
-        # r, g, b = self.color_sensor.rgb()                             # Alternative
-        # is_blue = b >= 29 and g < 30 and r < 10 
-        # return is_blue:
+        #return robot.color_sensor.color() == Color.BLUE
+        r, g, b = robot.color_sensor.rgb()                             # Alternative
+        is_blue = b >= 29 and g < 30 and r < 10 
+        return is_blue
 
-    def get_name(self):
-        return self.name
+    def update_section_screen(self, robot):
+        robot.ev3.screen.clear()
+        robot.ev3.screen.draw_text("[<-]   " + self.name)
+        robot.ev3.screen.draw_text("Status:")
+        

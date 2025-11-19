@@ -1,17 +1,17 @@
 from .section import Section
 from pybricks.tools import wait
 
-class SectionMoveObject(Section):
+class State:    # Enum
+    FIRST_FOLLOW_WALL = 1
+    SECOND_FOLLOW_WALL = 2
+    THIRD_DRIVE_BACK = 3
+    FORTH_SPIN = 4
+    FIFTH_DRIVE_FORWARD = 5
+    SIXTH_GRAB_OBJECT = 6
+    SEVENTH_DRIVE_BACK = 7
+    EIGTH_RELEASE_OBJECT = 8
 
-    class State:    # Enum
-        FIRST_FOLLOW_WALL = 1
-        SECOND_FOLLOW_WALL = 2
-        THIRD_DRIVE_BACK = 3
-        FORTH_SPIN = 4
-        FIFTH_DRIVE_FORWARD = 5
-        SIXTH_GRAB_OBJECT = 6
-        SEVENTH_DRIVE_BACK = 7
-        EIGTH_RELEASE_OBJECT = 8
+class SectionMoveObject(Section):
 
     def __init__(self):
         super().__init__()
@@ -25,6 +25,11 @@ class SectionMoveObject(Section):
     def reset(self, robot):
         self.state = State.FIRST_FOLLOW_WALL
 
+    def update_section_screen(self, robot):
+        robot.ev3.screen.clear()
+        robot.ev3.screen.draw_text("[<-]   " + self.name)
+        robot.ev3.screen.draw_text("Status:")
+
     def run_one_step(self, robot):
         if self.state == State.FIRST_FOLLOW_WALL:
             if robot.driven_distance() == 600:
@@ -34,45 +39,45 @@ class SectionMoveObject(Section):
             else:
                 self.follow_wall(robot, 100)
 
-        elif self.state == State.SECOND_FOLLOW_WALL:
-            if robot.ultrasonic_sensor.distance() < 50:         # Objekt erkannt
-                robot.drive(DRIVE_SPEED_SLOW, turn_rate=70)
-                wait(1000)                                  # nicht mit waits arbeiten, wegen Akku
-                robot.move_gripper_and_ultrasonic()
-                robot.spin(angle=-45)                           # vlt lieber Gyro
-                wait(1000)
-                robot.straight(distance_mm=100)
-                robot.move_gripper_and_ultrasonic()
-                robot.straight(distance_mm=-500)
-                robot.move_gripper_and_ultrasonic()
-                robot.straight(distance_mm=-100)
-                self.state = State.THIRD_DRIVE_BACK
-            else:
-                self.follow_wall(robot, 100)
+        # elif self.state == State.SECOND_FOLLOW_WALL:
+        #     if robot.ultrasonic_sensor.distance() < 50:         # Objekt erkannt
+        #         robot.drive(DRIVE_SPEED_SLOW, turn_rate=70)
+        #         wait(1000)                                  # nicht mit waits arbeiten, wegen Akku
+        #         robot.move_gripper_and_ultrasonic()
+        #         robot.spin(angle=-45)                           # vlt lieber Gyro
+        #         wait(1000)
+        #         robot.straight(distance_mm=100)
+        #         robot.move_gripper_and_ultrasonic()
+        #         robot.straight(distance_mm=-500)
+        #         robot.move_gripper_and_ultrasonic()
+        #         robot.straight(distance_mm=-100)
+        #         self.state = State.THIRD_DRIVE_BACK
+        #     else:
+        #         self.follow_wall(robot, 100)
 
-        elif self.state == State.THIRD_DRIVE_BACK:
-        elif self.state == State.FORTH_SPIN:
-        elif self.state == State.FIFTH_DRIVE_FORWARD:
-        elif self.state == State.SIXTH_GRAB_OBJECT:
-        elif self.state == State.SEVENTH_DRIVE_BACK:
-        elif self.state == State.EIGTH_RELEASE_OBJECT:
+        # elif self.state == State.THIRD_DRIVE_BACK:
+        # elif self.state == State.FORTH_SPIN:
+        # elif self.state == State.FIFTH_DRIVE_FORWARD:
+        # elif self.state == State.SIXTH_GRAB_OBJECT:
+        # elif self.state == State.SEVENTH_DRIVE_BACK:
+        # elif self.state == State.EIGTH_RELEASE_OBJECT:
 
-        self.follow_wall(robot, 100, 'touch sensor')
-        robot.spin(90)
-        self.follow_wall(robot, 100, 'touch sensor')
-        # robot.straight(50)  -> vlt zum ausrichten gegen Wand fahren
-        # Greifen der Dose hardcoden
-        robot.straight(-300)
-        robot.spin(-45)
-        robot.straight(100)
-        robot.move_gripper_and_ultrasonic()
-        # Dose in Zielbereich ziehen
-        robot.straight(-500)
-        # ausrichten zur Brücke
-        robot.move_gripper_and_ultrasonic()
-        robot.straight(-100)
-        robot.spin(135)
-        self.follow_wall(robot, 400, 'blue line')
+        # self.follow_wall(robot, 100, 'touch sensor')
+        # robot.spin(90)
+        # self.follow_wall(robot, 100, 'touch sensor')
+        # # robot.straight(50)  -> vlt zum ausrichten gegen Wand fahren
+        # # Greifen der Dose hardcoden
+        # robot.straight(-300)
+        # robot.spin(-45)
+        # robot.straight(100)
+        # robot.move_gripper_and_ultrasonic()
+        # # Dose in Zielbereich ziehen
+        # robot.straight(-500)
+        # # ausrichten zur Brücke
+        # robot.move_gripper_and_ultrasonic()
+        # robot.straight(-100)
+        # robot.spin(135)
+        # self.follow_wall(robot, 400, 'blue line')
         
     def follow_wall(self, robot, distanceToWall):
         deviation = robot.ultrasonic_sensor.distance() - distanceToWall
