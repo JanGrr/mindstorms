@@ -39,7 +39,7 @@ class SectionMoveObject(Section):
             self.sensorPosition = True
         dist = robot.ultrasonic.distance()
         robot.ev3.speaker.beep()
-        print(f"Abstand: {dist} mm")  # <-- zeigt jeden Schritt
+        print("Abstand: " + dist + " mm")  # <-- zeigt jeden Schritt
 
         if dist is None:    #falls Sensor nichts erkennt
             dist = self.target_distance 

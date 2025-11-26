@@ -18,12 +18,14 @@ class Robot:
         self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
         self.motor_small = Motor(Port.C, Direction.CLOCKWISE, gears=None)
         self.motor_small.reset_angle(0)
-        self.GRIPPER_CLOSED_AND_ULTRASONIC_UP = True
+        self.gripper_and_ultrasonic_rotation_degrees = 0
         self.color_sensor = ColorSensor(Port.S1)
-        self.ultrasonic_sensor = UltrasonicSensor(Port.S2)
+        self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
         #self.gyro_sensor = GyroSensor(Port.S3)
         self.touch_sensor = TouchSensor(Port.S2)
         #self.run_motor_and_sensor_check()
+
+
 
     def run_motor_and_sensor_check(self):
         if (self.motor_left == None):        raise Exception('Left Motor not connected')
@@ -67,10 +69,12 @@ class Robot:
     def reset_distance_and_angle(self):
         self.drive_base.reset()
 
-    def move_gripper_and_ultrasonic(self):
-        if(not self.GRIPPER_CLOSED_AND_ULTRASONIC_UP):
-            self.motor_small.run_target(speed=30, target_angle=70, then=Stop.HOLD, wait=False)      # Gripper öffnen und Ultraschallsensor nach unten
-            self.GRIPPER_CLOSED_AND_ULTRASONIC_UP = False
-        else:
-            self.motor_small.run_target(speed=30, target_angle=0, then=Stop.HOLD, wait=False)       # Gripper schließen und Ultraschallsensor zur Seite
-            self.GRIPPER_CLOSED_AND_ULTRASONIC_UP = True
+    # gets a target anngle in degrees and moves the gripper and ultrasonic sensor to that angle
+    def set_gripper_and_ultrasonic_angle(self, target_angle):
+        rotation_degrees = target_angle - self.gripper_and_ultrasonic_rotation_degrees
+        self.motor_small.run_target(speed=20, target_angle=rotation_degrees, then=Stop.HOLD, wait=True)
+        self.gripper_and_ultrasonic_rotation_degrees = target_angle
+
+
+            
+        
