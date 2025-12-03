@@ -21,3 +21,10 @@ class Section:
 
     def get_name(self):
         return self.name
+        
+    def update_section_screen(self, robot, status="", status2="", status3=""):
+        robot.ev3.screen.clear()
+        robot.ev3.screen.draw_text(x=3, y=3, text="[<-]   " + self.name)
+        robot.ev3.screen.draw_text(x=3, y=33, text="" + status)
+        robot.ev3.screen.draw_text(x=3, y=63, text="" + status2)
+        robot.ev3.screen.draw_text(x=3, y=93, text="" + status3)
