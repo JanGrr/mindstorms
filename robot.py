@@ -24,6 +24,7 @@ class Robot:
         #self.gyro_sensor = GyroSensor(Port.S3)
         self.touch_sensor = TouchSensor(Port.S2)
         #self.run_motor_and_sensor_check()
+        self.base_rgb = None
 
 
 
@@ -70,12 +71,12 @@ class Robot:
         self.drive_base.reset()
 
     def calibrate_gripper_and_ultrasonic_angle(self):
-        self.__motor_small.run_until_stalled(speed=-20, then=Stop.HOLD, duty_limit=80)  # Gripper und Ultraschallsensor ganz einfahren
+        self.__motor_small.run_until_stalled(speed=-40, then=Stop.HOLD, duty_limit=80)  # Gripper und Ultraschallsensor ganz einfahren
         self.__motor_small.reset_angle(0)
 
     # gets a target anngle in degrees and moves the gripper and ultrasonic sensor to that angle
-    def set_gripper_and_ultrasonic_angle(self, target_angle, turn_speed=20):
-        self.__motor_small.run_target(speed=turn_speed, target_angle=target_angle, then=Stop.HOLD, wait=True)
+    def set_gripper_and_ultrasonic_angle(self, target_angle, turn_speed=20, wait=True):
+        self.__motor_small.run_target(speed=turn_speed, target_angle=target_angle, then=Stop.HOLD, wait=wait)
         
         
 
