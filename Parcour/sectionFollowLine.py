@@ -44,7 +44,6 @@ class SectionFollowLine(Section):
         self.integral = 0
         self.last_error = 0
 
-    # P-Regler, also berechnet die zu korrigierende Drehung proportional zur Abweichung von dem Sollwert (der rechten Linienkante)
     def run_one_step(self, robot):
 
         r, g, b = robot.color_sensor.rgb()                             #TODO Um Blau Werte zu finden
@@ -54,6 +53,17 @@ class SectionFollowLine(Section):
             self.finished = True
             # TODO Celebration?
             return
+        '''
+        self.draw_info(robot)
+        rgb = robot.color_sensor.rgb()
+        reflection = (rgb[0] + rgb[1] + rgb[2]) / 300  
+        print(reflection, self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA)
+        seeing_line = reflection > (self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA)
+        
+        if seeing_line: 
+            self.not_seen_line_for = 0
+        else:
+            self.not_seen_line_for += 1
 
         # if self.state == State.CALIBRATING:
         #     self.calibrate(robot)

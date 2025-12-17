@@ -1,13 +1,15 @@
-from Parcour.section import Section
-from Parcour.sectionFollowLine import SectionFollowLine
-from Parcour.sectionMoveObject import SectionMoveObject
-from Parcour.sectionCrossBridge import SectionCrossBridge
-from Parcour.sectionSearchColorFields import SectionSearchColorFields
+from .section import Section
+from .sectionTest import SectionTest
+from .sectionFollowLine import SectionFollowLine
+from .sectionMoveObject import SectionMoveObject
+from .sectionCrossBridge import SectionCrossBridge
+from .sectionSearchColorFields import SectionSearchColorFields
 
 class Parcour:
 
     def __init__(self):
         self.sections = [
+            SectionTest(),
             SectionFollowLine(),
             SectionMoveObject(),
             SectionCrossBridge(),
