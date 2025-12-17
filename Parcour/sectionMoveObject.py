@@ -1,99 +1,79 @@
 from .section import Section
 from pybricks.tools import wait
+from pybricks.parameters import Stop
 
-class State:    # Enum
-    FIRST_FOLLOW_WALL = 1
-    SECOND_FOLLOW_WALL = 2
-    THIRD_DRIVE_BACK = 3
-    FORTH_SPIN = 4
-    FIFTH_DRIVE_FORWARD = 5
-    SIXTH_GRAB_OBJECT = 6
-    SEVENTH_DRIVE_BACK = 7
-    EIGTH_RELEASE_OBJECT = 8
+import time
 
 class SectionMoveObject(Section):
 
     def __init__(self):
         super().__init__()
+
         self.name = "Move Object"
-        self.TARGET_WALL_DISTANCE_MM = 100
-        self.PROPORTIONAL_GAIN = 1               # Je höher, desto "zitternder"
-        self.DRIVE_SPEED = 100   # mm/s
-        self.DRIVE_SPEED_SLOW = 30
-        self.state = State.FIRST_FOLLOW_WALL
+        self.distance_mm = 0
+        self.speed_mm_s = 0
+        self.target_distance = 350 # mm Abstand zur Wand links 
+        #TODO Distanz vllt näher ran, damit Sensor genauer wird????
+        self.speed = 120 # Vorwärtsgeschwindigkeit
+        self.kp = 1.2 # P-Gain
+        self.kd = 4.0 # D-Gain
+        self.sensorPosition = False
+
+        self.last_error = 0
+        self.last_time = time.time()
+        self.distance_travelled = 0
+        self.max_distance = 1950
+        self.done = False
+        self.turned = False
 
     def reset(self, robot):
-        self.state = State.FIRST_FOLLOW_WALL
+        # TODO: Implement reset logic if needed
+        pass
+        self.last_error = 0
+        self.distance_travelled = 0
+        self.last_time = time.time()
+        self.done = False
 
-    def update_section_screen(self, robot):
-        robot.ev3.screen.clear()
-        robot.ev3.screen.draw_text("[<-]   " + self.name)
-        robot.ev3.screen.draw_text("Status:")
-
+        # Fahren, entlang der linken Wand
     def run_one_step(self, robot):
-        if self.state == State.FIRST_FOLLOW_WALL:
-            if robot.driven_distance() == 600:
-                robot.drive(self.DRIVE_SPEED, turn_rate=90)
-                wait(1000)
-                self.state = State.SECOND_FOLLOW_WALL
-            else:
-                self.follow_wall(robot, 100)
+        # TODO: Implement object moving logic
+        pass
+        #Sensor über Motor in die richtige Position bewegen
+        if not self.sensorPosition:
+            robot.motor_small.run_target(speed=10, target_angle=40, then=Stop.HOLD, wait=True)
+            self.sensorPosition = True
+        dist = robot.ultrasonic_sensor.distance()
+        print("Abstand: " + str(dist) + " mm")
 
-        # elif self.state == State.SECOND_FOLLOW_WALL:
-        #     if robot.ultrasonic_sensor.distance() < 50:         # Objekt erkannt
-        #         robot.drive(DRIVE_SPEED_SLOW, turn_rate=70)
-        #         wait(1000)                                  # nicht mit waits arbeiten, wegen Akku
-        #         robot.move_gripper_and_ultrasonic()
-        #         robot.spin(angle=-45)                           # vlt lieber Gyro
-        #         wait(1000)
-        #         robot.straight(distance_mm=100)
-        #         robot.move_gripper_and_ultrasonic()
-        #         robot.straight(distance_mm=-500)
-        #         robot.move_gripper_and_ultrasonic()
-        #         robot.straight(distance_mm=-100)
-        #         self.state = State.THIRD_DRIVE_BACK
-        #     else:
-        #         self.follow_wall(robot, 100)
-
-        # elif self.state == State.THIRD_DRIVE_BACK:
-        # elif self.state == State.FORTH_SPIN:
-        # elif self.state == State.FIFTH_DRIVE_FORWARD:
-        # elif self.state == State.SIXTH_GRAB_OBJECT:
-        # elif self.state == State.SEVENTH_DRIVE_BACK:
-        # elif self.state == State.EIGTH_RELEASE_OBJECT:
-
-        # self.follow_wall(robot, 100, 'touch sensor')
-        # robot.spin(90)
-        # self.follow_wall(robot, 100, 'touch sensor')
-        # # robot.straight(50)  -> vlt zum ausrichten gegen Wand fahren
-        # # Greifen der Dose hardcoden
-        # robot.straight(-300)
-        # robot.spin(-45)
-        # robot.straight(100)
-        # robot.move_gripper_and_ultrasonic()
-        # # Dose in Zielbereich ziehen
-        # robot.straight(-500)
-        # # ausrichten zur Brücke
-        # robot.move_gripper_and_ultrasonic()
-        # robot.straight(-100)
-        # robot.spin(135)
-        # self.follow_wall(robot, 400, 'blue line')
+        if dist is None:    #falls Sensor nichts erkennt
+            dist = self.target_distance 
+            
+        error = dist - self.target_distance
+        now = time.time()
+        dt = now - self.last_time if now != self.last_time else 0.01
         
-    def follow_wall(self, robot, distanceToWall):
-        deviation = robot.ultrasonic_sensor.distance() - distanceToWall
-        correction = deviation * self.PROPORTIONAL_GAIN
-        robot.drive(self.DRIVE_SPEED, turn_rate=correction)
+        d_error = (error - self.last_error) / dt
+        steering = self.kp * error + self.kd * d_error
+        
+        steering = max(min(steering, 80), -80)
+        
+        robot.drive_base.drive(self.speed, steering)
+        
+        self.last_error = error
+        self.last_time = now
+        self.distance_travelled += self.speed * dt
+        
+        #Angekommen?
+        if self.distance_travelled >= self.max_distance:
+            robot.drive_base.stop()
+            self.done = True
 
-    def follow_wall(self, robot, distanceToWall, untill = 'blue line'):
-        if untill == 'blue line':
-            condition = lambda : self.check_for_blue_line(robot)
-        elif untill == 'touch sensor':
-            condition = lambda : robot.touch_sensor.pressed() == False
-        else:
-            raise Exception("Invalid condition for follow_wall")
+        #nächste Wand
+        if self.done == True and self.turned == False:
+            robot.spin(90)
+            self.target_distance = 110
+            self.max_distance = 600
+            self.turned = True
+        
 
-        while condition():             
-            deviation = robot.ultrasonic_sensor.distance() - distanceToWall
-            correction = deviation * self.PROPORTIONAL_GAIN
-            robot.drive(self.DRIVE_SPEED, turn_rate=correction)
-        robot.stop()
+        wait(10)

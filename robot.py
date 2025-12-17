@@ -16,12 +16,12 @@ class Robot:
                                                                     # Wenn der Roboter bei spin(360) weniger als 360° dreht, AXLE_TRACK_MM leicht erhöhen (aber immer erst WHEEL_DIAMETER_MM anpassen)
         self.drive_base = DriveBase(self.motor_left, self.motor_right, self.WHEEL_DIAMETER_MM, self.AXLE_TRACK_MM)      # Klasse die bereits Fahrfunktionen implementiert
         self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
-        # self.motor_small = Motor(Port.C, Direction.CLOCKWISE, gears=None)
-        # self.motor_small.reset_angle(0)
+        self.motor_small = Motor(Port.C, Direction.CLOCKWISE, gears=None)
+        self.motor_small.reset_angle(0)
         self.GRIPPER_CLOSED_AND_ULTRASONIC_UP = True
         self.color_sensor = ColorSensor(Port.S1)
         self.touch_sensor = TouchSensor(Port.S2)
-        # self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
+        self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
         # self.gyro_sensor = GyroSensor(Port.S4)
         self.ev3.speaker.set_speech_options(language='de', voice='m1', speed=120, pitch=0)  # speed = Wörter/Minute, pitch=0-99
 
@@ -57,6 +57,10 @@ class Robot:
 
     def reset_distance_and_angle(self):
         self.drive_base.reset()
+
+    def calibrate_gripper_and_ultrasonic_angle(self):
+        self.motor_small.run_until_stalled(speed=-40, then=Stop.HOLD, duty_limit=80)  # Gripper und Ultraschallsensor ganz einfahren
+        self.motor_small.reset_angle(0)
 
     def move_gripper_and_ultrasonic(self):
         if(not self.GRIPPER_CLOSED_AND_ULTRASONIC_UP):

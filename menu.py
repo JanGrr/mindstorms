@@ -61,7 +61,7 @@ class Menu:
         else:
             raise Exception("This button does nothing")
 
-        wait(100)  # die Tastendrücke werden sonst teilweise mehrfach erkannt
+        wait(250)  # die Tastendrücke werden sonst teilweise mehrfach erkannt
 
     def select_previous_section(self):
         self.course.current_section_index = (self.course.current_section_index - 1) % len(self.course.sections)
@@ -73,10 +73,11 @@ class Menu:
 
     def confirm_selection(self):
         self.course.running = True
-        self.course.sections[self.course.current_section_index].update_section_screen(self.robot)
-        self.course.sections[self.course.current_section_index].update_section_screen(self.robot, status ="on line")
+        current_section = self.course.sections[self.course.current_section_index]
+        current_section.update_section_screen(self.robot, current_section.status)
 
     def abort_parcour(self):
         self.course.running = False
-        self.course.sections[self.course.current_section_index].reset(self.robot)
+        current_section = self.course.sections[self.course.current_section_index]
+        current_section.reset(self.robot)
         self.update()
