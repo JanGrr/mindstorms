@@ -83,23 +83,19 @@ class Menu:
 
     def update(self):
         self.robot.ev3.screen.clear()
-        if not self.course.sections:
-            return  # Avoid division by zero if no sections
-
-        # Draw menu with all parcour sections
+        # draw menu with all parcour sections
         for i, section in enumerate(self.course.sections):
             self.robot.ev3.screen.draw_text(
-                x=3,
-                y=int(i * (self.SCREEN_HEIGHT / len(self.course.sections))),
-                text=section.get_name()
-            )
+                x = 3, 
+                y = int(i * (self.SCREEN_HEIGHT / len(self.course.sections))), 
+                text = section.get_name())
 
-        # Highlight selected section
+        # highlight selected section
         self.robot.ev3.screen.draw_box(
-            x1=1,
-            y1=int(self.course.current_section_index * (self.SCREEN_HEIGHT / len(self.course.sections))),
-            x2=self.SCREEN_WIDTH - 1,
-            y2=int((self.course.current_section_index + 1) * (self.SCREEN_HEIGHT / len(self.course.sections)) - 8)
+            x1 = 1, 
+            y1 = int(self.course.current_section_index * (self.SCREEN_HEIGHT / len(self.course.sections))),
+            x2 = self.SCREEN_WIDTH - 1,
+            y2 = int((self.course.current_section_index + 1) * (self.SCREEN_HEIGHT / len(self.course.sections)) - 8)
         )
 
     def check_buttonpress(self):
@@ -118,22 +114,22 @@ class Menu:
 
         button = buttons_pressed[0]
 
-        # Handle button presses
-        if button == Button.UP:
+        if button == Button.UP:                   # Falls match case nicht funktioniert
             self.select_previous_section()
+            # self.last_pressed = Button.UP
         elif button == Button.DOWN:
             self.select_next_section()
+            # self.last_pressed = Button.DOWN
         elif button == Button.CENTER:
             self.confirm_selection()
+            # self.last_pressed = Button.CENTER
         elif button == Button.LEFT:
             self.abort_parcour()
+            # self.last_pressed = Button.BACK
         else:
-            # Unknown button, ignore
-            return
+            raise Exception("This button does nothing")
 
-        wait(300)  # Debounce delay
-        print("Button  pressed")
-
+        wait(250)  # die Tastendrücke werden sonst teilweise mehrfach erkannt
 
     def select_previous_section(self):
         self.course.current_section_index = (self.course.current_section_index - 1) % len(self.course.sections)
@@ -145,26 +141,11 @@ class Menu:
 
     def confirm_selection(self):
         self.course.running = True
-    
+        current_section = self.course.sections[self.course.current_section_index]
+        current_section.update_section_screen(self.robot, current_section.status)
+
     def abort_parcour(self):
         self.course.running = False
-        self.course.sections[self.course.current_section_index].reset(self.robot)
-        print("Parcour aborted.")
-        self.update()
-
-    def select_previous_section(self):
-        self.course.current_section_index = (self.course.current_section_index - 1) % len(self.course.sections)
-        self.update()
-        
-    def select_next_section(self):
-        self.course.current_section_index = (self.course.current_section_index + 1) % len(self.course.sections)
-        self.update()
-
-    def confirm_selection(self):
-        self.course.running = True
-    
-    def abort_parcour(self):
-        self.course.running = False
-        self.course.sections[self.course.current_section_index].reset(self.robot)
-        print("Parcour aborted.")
+        current_section = self.course.sections[self.course.current_section_index]
+        current_section.reset(self.robot)
         self.update()

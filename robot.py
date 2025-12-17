@@ -12,7 +12,7 @@ class Robot:
         self.motor_right = Motor(Port.B, Direction.COUNTERCLOCKWISE, gears=None)
         self.WHEEL_DIAMETER_MM = 55                                 # Raddurchmesser der Antriebsräder in mm
                                                                     # Wenn der Roboter bei straight(1000) nicht weit genug fährt, WHEEL_DIAMETER_MM leicht verringern
-        self.AXLE_TRACK_MM = 105                                   # Abstand der beiden angetriebenen Räder voneinander in mm
+        self.AXLE_TRACK_MM = 105                                    # Abstand der beiden angetriebenen Räder voneinander in mm
                                                                     # Wenn der Roboter bei spin(360) weniger als 360° dreht, AXLE_TRACK_MM leicht erhöhen (aber immer erst WHEEL_DIAMETER_MM anpassen)
         self.drive_base = DriveBase(self.motor_left, self.motor_right, self.WHEEL_DIAMETER_MM, self.AXLE_TRACK_MM)      # Klasse die bereits Fahrfunktionen implementiert
         self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
@@ -20,22 +20,10 @@ class Robot:
         self.__motor_small.reset_angle(0)
         self.gripper_and_ultrasonic_rotation_degrees = 0
         self.color_sensor = ColorSensor(Port.S1)
-        self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
-        #self.gyro_sensor = GyroSensor(Port.S3)
         self.touch_sensor = TouchSensor(Port.S2)
-        #self.run_motor_and_sensor_check()
-        self.base_rgb = None
-
-
-
-    def run_motor_and_sensor_check(self):
-        if (self.motor_left == None):        raise Exception('Left Motor not connected')
-        if (self.motor_right == None):       raise Exception('Right Motor not connected')
-        if (self.motor_small == None):       raise Exception('Small Motor not connected')
-        if (self.color_sensor == None):      raise Exception('Colorsensor not connected')
-        #if (self.ultrasonic_sensor == None): raise Exception('Ultrasonic sensor not connected')
-        if (self.gyro_sensor == None):       raise Exception('Gyrosensor not connected')
-        #if (self.touch_sensor == None):      raise Exception('Touchsensor not connected')
+        self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
+        # self.gyro_sensor = GyroSensor(Port.S4)
+        self.ev3.speaker.set_speech_options(language='de', voice='m1', speed=120, pitch=0)  # speed = Wörter/Minute, pitch=0-99
 
     def drive(self, drive_speed, turn_rate):                          # drive_speed in mm/s, turn_rate in deg/s
         self.drive_base.drive(drive_speed, turn_rate)                      # continoues drive untill stop() is called

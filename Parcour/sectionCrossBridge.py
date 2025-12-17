@@ -22,6 +22,11 @@ class SectionCrossBridge(Section):
         robot.set_gripper_and_ultrasonic_angle(0)
         robot.stop()
 
+    def update_section_screen(self, robot):
+        robot.ev3.screen.clear()
+        robot.ev3.screen.draw_text("[<-]   " + self.name)
+        robot.ev3.screen.draw_text("Status:")
+
     def run_one_step(self, robot):
         self.robot = robot
         if self.state == "CALIBRATE":

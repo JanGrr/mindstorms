@@ -27,21 +27,22 @@ class Parcour:
     
     def run_one_step(self, robot):
         if self.sections[self.current_section_index].finished:
-            self.next_section()
+            self.next_section(robot)
         else:
             self.sections[self.current_section_index].run_one_step(robot) 
 
-    def next_section(self):
-        self.sections[self.current_section_index].reset()
+    def next_section(self, robot):
+        self.sections[self.current_section_index].reset(robot)
         if (self.current_section_index == len(self.sections) - 1):
             self.finished()
         else:
             self.current_section_index += 1
-        self.menu.update()
+            #self.sections[self.current_section_index].update_section_screen(robot)
 
     def finished(self):
         self.running = False
-        # self.current_section_index = 0
+        self.current_section_index = 0
+        self.menu.update()
 
     def reset(self):
         self.current_section_index = 0
