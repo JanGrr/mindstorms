@@ -53,17 +53,6 @@ class SectionFollowLine(Section):
             self.finished = True
             # TODO Celebration?
             return
-        '''
-        self.draw_info(robot)
-        rgb = robot.color_sensor.rgb()
-        reflection = (rgb[0] + rgb[1] + rgb[2]) / 300  
-        print(reflection, self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA)
-        seeing_line = reflection > (self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA)
-        
-        if seeing_line: 
-            self.not_seen_line_for = 0
-        else:
-            self.not_seen_line_for += 1
 
         # if self.state == State.CALIBRATING:
         #     self.calibrate(robot)

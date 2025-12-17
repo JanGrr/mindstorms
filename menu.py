@@ -116,18 +116,12 @@ class Menu:
 
         if button == Button.UP:                   # Falls match case nicht funktioniert
             self.select_previous_section()
-            # self.last_pressed = Button.UP
         elif button == Button.DOWN:
             self.select_next_section()
-            # self.last_pressed = Button.DOWN
         elif button == Button.CENTER:
             self.confirm_selection()
-            # self.last_pressed = Button.CENTER
         elif button == Button.LEFT:
             self.abort_parcour()
-            # self.last_pressed = Button.BACK
-        else:
-            raise Exception("This button does nothing")
 
         wait(250)  # die Tastendrücke werden sonst teilweise mehrfach erkannt
 
@@ -142,7 +136,7 @@ class Menu:
     def confirm_selection(self):
         self.course.running = True
         current_section = self.course.sections[self.course.current_section_index]
-        current_section.update_section_screen(self.robot, current_section.status)
+        #current_section.update_section_screen(self.robot, current_section.status)
 
     def abort_parcour(self):
         self.course.running = False

@@ -20,7 +20,7 @@ class SectionMoveObject(Section):
         self.last_error = 0
         self.last_time = time.time()
         self.distance_travelled = 0
-        self.max_distance = 1820
+        self.max_distance = 1800
         self.turned = False
         self.findBlue = False
 
@@ -40,6 +40,7 @@ class SectionMoveObject(Section):
         self.last_time = time.time()
         self.turned = False
         self.findBlue = False
+        self.finished = False
 
     def goto_state(self, new_state):
         self.state = new_state
@@ -73,7 +74,7 @@ class SectionMoveObject(Section):
             steering = self.kp * error + self.kd * d_error
         
             steering = max(min(steering, self.STEERING), -self.STEERING)
-            self.update_section_screen(robot, status="pd-Regler", status2="", status3="")
+            self.update_section_screen(robot, status1="pd-Regler", status2="", status3="")
         #2
             robot.drive_base.drive(self.speed, -steering)
         
@@ -84,7 +85,7 @@ class SectionMoveObject(Section):
             self.distance_travelled = robot.driven_distance()
             if self.distance_travelled >= self.max_distance:
                 robot.drive_base.stop()
-                self.update_section_screen(robot, status="firstPartDone", status2="", status3="")
+                self.update_section_screen(robot, status1="firstPartDone", status2="", status3="")
                 if self.findBlue:
 
                     self.goto_state(7)  # Move to find blue
@@ -111,7 +112,7 @@ class SectionMoveObject(Section):
 
             #Farbe lesen
             detectedColor = robot.color_sensor.color()
-            self.update_section_screen(robot, status=str(detectedColor), status2="WIR SIND NICHT IM QUADRAT", status3="")
+            self.update_section_screen(robot, status1=str(detectedColor), status2="WIR SIND NICHT IM QUADRAT", status3="")
 
             #Fahren bis Weiß erkannt wird
             robot.drive_base.drive(self.speed / 2, 0)
@@ -130,7 +131,7 @@ class SectionMoveObject(Section):
             while robot.angle_turned() > -90:
                 pass
             robot.stop()
-            robot.straight(-200)
+            robot.straight(-180)
             robot.reset_distance_and_angle()
             robot.set_gripper_and_ultrasonic_angle(self.GRIPPINGANGLE, turn_speed=100)
             robot.straight(-100)
@@ -144,7 +145,7 @@ class SectionMoveObject(Section):
                 pass
             robot.reset_distance_and_angle()
             self.distance_travelled = 0
-            self.target_distance = 330
+            self.target_distance = 345
             self.max_distance = 400
             self.findBlue = True
             self.goto_state(7)
@@ -156,7 +157,7 @@ class SectionMoveObject(Section):
             robot.spin(15)
             dist2 = robot.ultrasonic_sensor.distance()
             print("Zweite", dist2)
-            self.update_section_screen(robot, status=str(dist), status2=str(dist2) , status3="")
+            self.update_section_screen(robot, status1=str(dist), status2=str(dist2) , status3="")
             while dist2 < dist:
                 dist = dist2
                 robot.spin(15)
@@ -182,7 +183,7 @@ class SectionMoveObject(Section):
             steering = self.kp * error + self.kd * d_error
         
             steering = max(min(steering, self.STEERING), -self.STEERING)
-            self.update_section_screen(robot, status= str(dist) + " mm", status2="Error:" + str(error), status3="Steering: " + str(steering))
+            self.update_section_screen(robot, status1= str(dist) + " mm", status2="Error:" + str(error), status3="Steering: " + str(steering))
         #2
             robot.drive_base.drive(self.speed / 4, -steering)
         
@@ -191,7 +192,7 @@ class SectionMoveObject(Section):
             self.last_time = now
             #self.distance_travelled += self.speed * dt
          
-            self.update_section_screen(robot, status=str(detectedColor), status2="Auf Blau warten", status3="")
+            self.update_section_screen(robot, status1=str(detectedColor), status2="Auf Blau warten", status3="")
             base_r, base_g, base_b = robot.base_rgb
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
             if relative_blue_change > 3:
@@ -203,7 +204,8 @@ class SectionMoveObject(Section):
             # beep
             robot.ev3.speaker.beep()
             robot.stop()
-            self.update_section_screen(robot, status="Section Finished", status2="", status3="")
+            self.update_section_screen(robot, status1="Section Finished", status2="", status3="")
+            self.finished = True
             self.goto_state(10)
 
 

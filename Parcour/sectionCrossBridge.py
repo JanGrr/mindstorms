@@ -21,6 +21,7 @@ class SectionCrossBridge(Section):
     def reset(self, robot):
         robot.set_gripper_and_ultrasonic_angle(0)
         robot.stop()
+        self.finished = False
 
     def update_section_screen(self, robot):
         robot.ev3.screen.clear()
@@ -119,10 +120,10 @@ class SectionCrossBridge(Section):
             self.p_controll(robot, target_value=80, prop_gain=.7, speed=150+(750*(driven_distance-1600)/200))
             return
 
-        self.p_controll(robot, target_value=80, prop_gain=.5, speed=900)
+        self.p_controll(robot, target_value=80, prop_gain=.65, speed=900)
 
     def turn_2(self, robot):
-        if robot.driven_distance() > 2100:
+        if robot.driven_distance() > 2200:
             self.next_state()
             return
         self.p_controll(robot, target_value=80, prop_gain=1.1, speed=80)
@@ -155,7 +156,8 @@ class SectionCrossBridge(Section):
 
     def finished_state(self, robot):
         robot.stop()
-        print("Finnished")
+        self.finished = True
+        
 
     def sees_blue(self, robot):
         r,g,b = robot.color_sensor.rgb()
