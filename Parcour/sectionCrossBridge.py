@@ -30,7 +30,10 @@ class SectionCrossBridge(Section):
 
     def run_one_step(self, robot):
         self.robot = robot
-        print(robot.ultrasonic_sensor.distance())
+        if not self.check_ultrasonic_value_reasonable(robot):
+            robot.stop()
+            print("Ultrasonic Sensor Value not reasonable, waiting...")
+            return
 
         if len(self.errors) > 40:
             self.errors = self.errors[-10:]
@@ -64,6 +67,11 @@ class SectionCrossBridge(Section):
             self.run_till_blue(robot)
         elif self.state == "FINISHED":
             self.finished_state(robot)
+
+    def check_ultrasonic_value_reasonable(self, robot):
+        if robot.ultrasonic_sensor.distance() == 2550:
+            return False
+        return True
 
     def next_state(self):
         self.state_index += 1
@@ -141,7 +149,7 @@ class SectionCrossBridge(Section):
         if robot.driven_distance() > 2200:
             self.next_state()
             return
-        self.p_controll(robot, target_value=80, prop_gain=1.1, speed=80)
+        self.p_controll(robot, target_value=80, prop_gain=1.2, speed=80)
 
     def down_section(self, robot):
         if robot.driven_distance() > 2350:
