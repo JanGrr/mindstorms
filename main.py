@@ -9,6 +9,8 @@ robot = Robot()
 course = Parcour()
 menu = Menu(robot, course)
 
+robot.calibrate_gripper_and_ultrasonic_angle()
+
 while True:
     menu.check_buttonpress()
     if course.running:
