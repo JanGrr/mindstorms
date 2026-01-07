@@ -8,28 +8,31 @@ class SectionCrossBridge(Section):
         super().__init__()
         self.name = "Cross Bridge"
 
-        self.states = ["CALIBRATE", "DRIVE_SECURITY", "EXTEND_ULTRASONIC", "SPIN_LEFT", "DRIVE_TO_LEFT_EDGE", "UP_SECTION", "TURN_1", "MIDDLE_SECTION", "TURN_2", "DOWN_SECTION", "END_SECTION", "RUN_TILL_BLUE", "FINISHED"]
+        self.states = ["CALIBRATE", "DRIVE_SECURITY", "EXTEND_ULTRASONIC", "SPIN_LEFT", "DRIVE_TO_LEFT_EDGE", "TURN_IN_ON_LEFT_EDGE", "UP_SECTION", "TURN_1", "MIDDLE_SECTION", "TURN_2", "DOWN_SECTION", "END_SECTION", "RUN_TILL_BLUE", "FINISHED"]
         self.state_index = 0
         self.state = self.states[self.state_index]
 
         self.sectionStarted = False
 
         self.robot = None
+
+        self.errors = []
         
-        
+
 
     def reset(self, robot):
         robot.set_gripper_and_ultrasonic_angle(0)
         robot.stop()
         self.finished = False
 
-    def update_section_screen(self, robot):
-        robot.ev3.screen.clear()
-        robot.ev3.screen.draw_text("[<-]   " + self.name)
-        robot.ev3.screen.draw_text("Status:")
 
     def run_one_step(self, robot):
         self.robot = robot
+
+        if len(self.errors) > 40:
+            self.errors = self.errors[-10:]
+
+
         if self.state == "CALIBRATE":
             self.calibrate(robot)
         elif self.state == "DRIVE_SECURITY":
@@ -40,6 +43,8 @@ class SectionCrossBridge(Section):
             self.spin_left(robot)
         elif self.state == "DRIVE_TO_LEFT_EDGE":
             self.drive_to_left_edge(robot)
+        elif self.state == "TURN_IN_ON_LEFT_EDGE":
+            self.turn_in_on_left_edge(robot)
         elif self.state == "UP_SECTION":
             self.up_section(robot)
         elif self.state == "TURN_1":
@@ -68,6 +73,7 @@ class SectionCrossBridge(Section):
         ultrasonic_distance = robot.ultrasonic_sensor.distance()
         ultrasonic_distance = min(ultrasonic_distance, 160)  
         error = ultrasonic_distance - target_value
+        self.errors.append(error)
         steering = (prop_gain * error)
         robot.drive(speed, steering)
 
@@ -97,11 +103,18 @@ class SectionCrossBridge(Section):
             return
         robot.drive(40, 0)
 
+    def turn_in_on_left_edge(self, robot):
+        if len(self.errors) >= 10:
+            if self.errors[-10::-1].average() < 5:
+                self.next_state()
+                return
+        self.p_controll(robot, target_value=80, prop_gain=.1.5, speed=100)
+
     def up_section(self, robot):
         if robot.driven_distance() > 700:
             self.next_state()
             return
-        self.p_controll(robot, target_value=100, prop_gain=1, speed=100)
+        self.p_controll(robot, target_value=80, prop_gain=.7, speed=400)
 
     def turn_1(self, robot):
         if robot.driven_distance() > 1100:
