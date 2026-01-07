@@ -1,5 +1,3 @@
-from .section import Section
-from .sectionTest import SectionTest
 from .sectionFollowLine import SectionFollowLine
 from .sectionMoveObject import SectionMoveObject
 from .sectionCrossBridge import SectionCrossBridge
@@ -9,7 +7,6 @@ class Parcour:
 
     def __init__(self):
         self.sections = [
-            SectionTest(),
             SectionFollowLine(),
             SectionMoveObject(),
             SectionCrossBridge(),
