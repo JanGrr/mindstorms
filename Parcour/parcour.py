@@ -34,7 +34,7 @@ class Parcour:
             self.finished()
         else:
             self.current_section_index += 1
-            #self.sections[self.current_section_index].update_section_screen(robot)
+            self.sections[self.current_section_index].update_section_screen(robot)
 
     def finished(self):
         self.running = False

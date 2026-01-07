@@ -136,7 +136,7 @@ class Menu:
     def confirm_selection(self):
         self.course.running = True
         current_section = self.course.sections[self.course.current_section_index]
-        #current_section.update_section_screen(self.robot, current_section.status)
+        current_section.update_section_screen(self.robot)
 
     def abort_parcour(self):
         self.course.running = False
