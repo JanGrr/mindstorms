@@ -101,14 +101,6 @@ class SectionFollowLine(Section):
             else:
                 return  # do nothing, just search for line when in state.OBSTACLE
 
-    def p_regler(self, robot, reflection):
-        error = reflection - self.TARGET_VALUE
-        correction = error * self.PROPORTIONAL_GAIN
-        if error < 25:                                       #TODO vlt proportional speed (DRIVE_SPEED auch P-regler?)
-            robot.drive(self.DRIVE_SPEED, turn_rate=correction)
-        else:
-            robot.drive(drive_speed=0, turn_rate=correction)
-
     def pid_regler(self, robot, reflection):
         error = reflection - self.TARGET_VALUE
         self.integral = self.integral + error
