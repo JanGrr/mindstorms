@@ -149,7 +149,7 @@ class SectionCrossBridge(Section):
         if robot.driven_distance() > 2200:
             self.next_state()
             return
-        self.p_controll(robot, target_value=80, prop_gain=1.2, speed=80)
+        self.p_controll(robot, target_value=100, prop_gain=1.2, speed=80)
 
     def down_section(self, robot):
         if robot.driven_distance() > 2350:
@@ -178,7 +178,7 @@ class SectionCrossBridge(Section):
         robot.drive(60, 0)
 
     def finished_state(self, robot):
-        self.reset(robot)
+        self.finished = True
         
 
     def sees_blue(self, robot):
