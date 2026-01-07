@@ -26,8 +26,11 @@ class SectionCrossBridge(Section):
         self.finished = False
 
 
+
+
     def run_one_step(self, robot):
         self.robot = robot
+        print(robot.ultrasonic_sensor.distance())
 
         if len(self.errors) > 40:
             self.errors = self.errors[-10:]
@@ -97,7 +100,6 @@ class SectionCrossBridge(Section):
     
     def drive_to_left_edge(self, robot):
         ultrasonic_distance = robot.ultrasonic_sensor.distance()
-        print(ultrasonic_distance)
         if ultrasonic_distance > 80:
             self.next_state()
             return
@@ -105,7 +107,7 @@ class SectionCrossBridge(Section):
 
     def turn_in_on_left_edge(self, robot):
         if len(self.errors) >= 10:
-            if self.errors[-10::-1].average() < 5:
+            if sum(self.errors[-10:]) / 10 < 5:
                 self.next_state()
                 return
         self.p_controll(robot, target_value=80, prop_gain=1.5, speed=100)
@@ -168,8 +170,7 @@ class SectionCrossBridge(Section):
         robot.drive(60, 0)
 
     def finished_state(self, robot):
-        robot.stop()
-        self.finished = True
+        self.reset(robot)
         
 
     def sees_blue(self, robot):
