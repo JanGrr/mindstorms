@@ -26,8 +26,14 @@ class SectionCrossBridge(Section):
         self.finished = False
 
 
+
+
     def run_one_step(self, robot):
         self.robot = robot
+        if not self.check_ultrasonic_value_reasonable(robot):
+            robot.stop()
+            print("Ultrasonic Sensor Value not reasonable, waiting...")
+            return
 
         if len(self.errors) > 40:
             self.errors = self.errors[-10:]
@@ -61,6 +67,11 @@ class SectionCrossBridge(Section):
             self.run_till_blue(robot)
         elif self.state == "FINISHED":
             self.finished_state(robot)
+
+    def check_ultrasonic_value_reasonable(self, robot):
+        if robot.ultrasonic_sensor.distance() == 2550:
+            return False
+        return True
 
     def next_state(self):
         self.state_index += 1
@@ -97,7 +108,6 @@ class SectionCrossBridge(Section):
     
     def drive_to_left_edge(self, robot):
         ultrasonic_distance = robot.ultrasonic_sensor.distance()
-        print(ultrasonic_distance)
         if ultrasonic_distance > 80:
             self.next_state()
             return
@@ -105,7 +115,7 @@ class SectionCrossBridge(Section):
 
     def turn_in_on_left_edge(self, robot):
         if len(self.errors) >= 10:
-            if self.errors[-10::-1].average() < 5:
+            if sum(self.errors[-10:]) / 10 < 5:
                 self.next_state()
                 return
         self.p_controll(robot, target_value=80, prop_gain=1.5, speed=100)
@@ -139,7 +149,7 @@ class SectionCrossBridge(Section):
         if robot.driven_distance() > 2200:
             self.next_state()
             return
-        self.p_controll(robot, target_value=80, prop_gain=1.1, speed=80)
+        self.p_controll(robot, target_value=80, prop_gain=1.2, speed=80)
 
     def down_section(self, robot):
         if robot.driven_distance() > 2350:
@@ -168,8 +178,7 @@ class SectionCrossBridge(Section):
         robot.drive(60, 0)
 
     def finished_state(self, robot):
-        robot.stop()
-        self.finished = True
+        self.reset(robot)
         
 
     def sees_blue(self, robot):
