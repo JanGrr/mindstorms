@@ -18,13 +18,13 @@ class SectionFollowLine(Section):
         self.UNDERGROUND_DELTA = 10              # UNDERGROUND_REFLECTION + UNDERGROUND_DELTA = höchste Reflection des Untergrunds, dass wir trotzdem noch denken es ist der reine Untergrund ohne Linie
         self.LINE_REFLECTION = 85
         self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 2
-        self.DRIVE_SPEED = 30                   # mm/s
-        self.DRIVE_SPEED_OBSTACLE = 50          # mm/s
+        self.DRIVE_SPEED = 100                   # mm/s
+        self.DRIVE_SPEED_OBSTACLE = 200          # mm/s
         self.SEARCH_DRIVE_SPEED = 20
-        self.PROPORTIONAL_GAIN = 0.75               # Je höher, desto "zitternder"
-        self.INTEGRAL_GAIN = 0.75
+        self.PROPORTIONAL_GAIN = 1.5               # Je höher, desto "zitternder"
+        self.INTEGRAL_GAIN = 0
         self.integral = 0
-        self.DERIVATIVE_GAIN = 0.75
+        self.DERIVATIVE_GAIN = 1.5
         self.last_error = 0
         self.SEARCH_WIDTH_ANGLE = 30            # Wie breit der Suchwinkel nach links und rechts ist, wenn die Linie verloren wurde
         self.SEARCH_TURN_SPEED = 30                # deg/s
@@ -54,12 +54,8 @@ class SectionFollowLine(Section):
             # TODO Celebration?
             return
 
-        # if self.state == State.CALIBRATING:
-        #     self.calibrate(robot)
-        #     self.state = State.SEEING_LINE
-        #     return
-
         if robot.touch_sensor.pressed():
+            robot.stop()
             self.state = State.OBSTACLE
             self.status="Obstacle"
             self.update_section_screen(robot, self.status)
@@ -79,7 +75,7 @@ class SectionFollowLine(Section):
             self.state = State.SEEING_LINE
             self.angle_turned_since_line_lost = 0
 
-            self.p_regler(robot, reflection)    # Linie entlang fahren mithilfe eines P-Reglers
+            self.pid_regler(robot, reflection)    # Linie entlang fahren mithilfe eines P-Reglers
             
         else: # NOT SEEING LINE
             self.angle_turned_since_line_lost = robot.angle_turned()
@@ -92,28 +88,15 @@ class SectionFollowLine(Section):
                 # TODO Display oder Ton?
 
             elif self.state == State.LOST_LINE:
-                # Wenn Linie verloren, dann maximal 100° nach Links drehen um zwischen starker Linkskurve und Lücke zu unterscheiden
-                # Linie nicht wiedergefunden -> Lücke, also wieder gerade drehen und suchen
-                if self.angle_turned_since_line_lost < -60:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-                    self.status="gap right"
+                # check for gap
+                if self.angle_turned_since_line_lost < -60:
+                    self.status="gap"
                     self.update_section_screen(robot, self.status)
-                    self.state = State.GAP_RIGHT_TURN
-                    robot.drive(self.SEARCH_DRIVE_SPEED, self.SEARCH_TURN_SPEED)
+                    robot.drive(10, self.SEARCH_TURN_SPEED)
+                    while robot.angle_turned() < 20:
+                        continue
+                    robot.drive(self.DRIVE_SPEED, turn_rate=-(self.DRIVE_SPEED / 3))  # Bogen fahren um Lücke zu überqueren
                     # TODO Display oder Ton?
-
-            elif self.state == State.GAP_RIGHT_TURN:
-                if self.angle_turned_since_line_lost > self.SEARCH_WIDTH_ANGLE:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-                    self.status="gap left"
-                    self.update_section_screen(robot, self.status)
-                    self.state = State.GAP_LEFT_TURN
-                    robot.drive(self.SEARCH_DRIVE_SPEED, -self.SEARCH_TURN_SPEED)
-
-            elif self.state == State.GAP_LEFT_TURN:
-                if self.angle_turned_since_line_lost < -self.SEARCH_WIDTH_ANGLE:  # Schon 100° gedreht seit Linienverlust? -> Ja = Lücke
-                    self.status="gap right"
-                    self.update_section_screen(robot, self.status)
-                    self.state = State.GAP_RIGHT_TURN
-                    robot.drive(drive_speed=0, turn_rate=self.SEARCH_TURN_SPEED)
 
             else:
                 return  # do nothing, just search for line when in state.OBSTACLE
@@ -121,10 +104,10 @@ class SectionFollowLine(Section):
     def p_regler(self, robot, reflection):
         error = reflection - self.TARGET_VALUE
         correction = error * self.PROPORTIONAL_GAIN
-        if error < 25:                                       #TODO vlt proportional speed
-            robot.drive(self.DRIVE_SPEED, turn_rate=correction)     #TODO DRIVE_SPEED auch P-regler?
+        if error < 25:                                       #TODO vlt proportional speed (DRIVE_SPEED auch P-regler?)
+            robot.drive(self.DRIVE_SPEED, turn_rate=correction)
         else:
-            robot.drive(drive_speed=0, turn_rate=correction)     #TODO DRIVE_SPEED auch P-regler?
+            robot.drive(drive_speed=0, turn_rate=correction)
 
     def pid_regler(self, robot, reflection):
         error = reflection - self.TARGET_VALUE
@@ -132,10 +115,10 @@ class SectionFollowLine(Section):
         derivative = error - self.last_error
         self.last_error = error
         correction = (error * self.PROPORTIONAL_GAIN) + (self.integral * self.INTEGRAL_GAIN) + (derivative * self.DERIVATIVE_GAIN)
-        if error < 25:                                       #TODO vlt proportional speed
-            robot.drive(self.DRIVE_SPEED, turn_rate=correction)     #TODO DRIVE_SPEED auch P-regler?
+        if error < 30:
+            robot.drive(self.DRIVE_SPEED, turn_rate=correction)
         else:
-            robot.drive(drive_speed=0, turn_rate=correction)     #TODO DRIVE_SPEED auch P-regler?
+            robot.drive(drive_speed=0, turn_rate=correction)
 
 
     def calibrate(self, robot):     # TODO lieber min und max Werte speicher und LINE_REFLECTION = max und UNDERGROUND_REFLECTION = min
@@ -147,7 +130,11 @@ class SectionFollowLine(Section):
         robot.spin(-40)
 
     def drive_around_obstacle(self, robot):
-        robot.stop()
-        robot.straight(-50)
-        robot.spin(60)
-        robot.drive(self.DRIVE_SPEED_OBSTACLE, turn_rate=-12)
+        robot.straight(-10)
+        robot.spin(75)
+        robot.drive(self.DRIVE_SPEED_OBSTACLE, turn_rate=-(self.DRIVE_SPEED_OBSTACLE / 4))  # Bogen fahren
+        
+        already_distance_driven = robot.driven_distance()
+        while robot.driven_distance() < already_distance_driven + 450:
+            pass
+        robot.drive(self.DRIVE_SPEED, turn_rate=-(self.DRIVE_SPEED / 4))
