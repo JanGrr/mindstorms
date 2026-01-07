@@ -108,7 +108,7 @@ class SectionCrossBridge(Section):
             if self.errors[-10::-1].average() < 5:
                 self.next_state()
                 return
-        self.p_controll(robot, target_value=80, prop_gain=.1.5, speed=100)
+        self.p_controll(robot, target_value=80, prop_gain=1.5, speed=100)
 
     def up_section(self, robot):
         if robot.driven_distance() > 700:
