@@ -2,6 +2,7 @@ from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor, UltrasonicSensor, GyroSensor)
 from pybricks.parameters import Port, Stop, Direction
 from pybricks.robotics import DriveBase
+from pybricks.tools import wait
 
 
 class Robot:
@@ -29,9 +30,7 @@ class Robot:
         self.drive_base.drive(drive_speed, turn_rate)                      # continoues drive untill stop() is called
 
     def stop(self): # einzelnen Motoren sofort anhalten, da drive_base.stop() die Motoren ausrollen lassen würde
-        self.drive_base.stop() 
-        self.motor_left.hold()
-        self.motor_right.hold()
+        self.drive_base.stop(Stop.HOLD)
 
     def straight(self, distance_mm): # Programmcode läuft weiter oder?
         self.drive_base.straight(distance_mm)
