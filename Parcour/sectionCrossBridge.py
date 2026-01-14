@@ -17,6 +17,9 @@ class SectionCrossBridge(Section):
         self.robot = None
 
         self.errors = []
+        self.waited_for_ultrasonic = False
+
+        self.unreasonable_ultrasonic_count = 0
         
 
 
@@ -31,8 +34,13 @@ class SectionCrossBridge(Section):
     def run_one_step(self, robot):
         self.robot = robot
         if not self.check_ultrasonic_value_reasonable(robot):
-            robot.stop()
-            print("Ultrasonic Sensor Value not reasonable, waiting...")
+            robot.drive(0,0)
+            self.unreasonable_ultrasonic_count += 1
+            if self.unreasonable_ultrasonic_count > 1000:
+                print("Ultrasonic Sensor Value not reasonable, resetting gripper and ultrasonic angle")
+                robot.set_gripper_and_ultrasonic_angle(60, turn_speed=130, wait=True)  # Ultrasonic Sensor ausfahren
+                robot.set_gripper_and_ultrasonic_angle(100, turn_speed=130, wait=True)  # Ultrasonic Sensor einfahren
+                self.unreasonable_ultrasonic_count = 0
             return
 
         if len(self.errors) > 40:
@@ -69,7 +77,7 @@ class SectionCrossBridge(Section):
             self.finished_state(robot)
 
     def check_ultrasonic_value_reasonable(self, robot):
-        if robot.ultrasonic_sensor.distance() == 2550:
+        if robot.ultrasonic_sensor.distance() == 2550 and self.state_index < 7:
             return False
         return True
 
@@ -82,6 +90,7 @@ class SectionCrossBridge(Section):
 
     def p_controll(self, robot, target_value=80, prop_gain=1, speed=50):
         ultrasonic_distance = robot.ultrasonic_sensor.distance()
+        print("State: ", self.state, "Ultrasonic Distance: ", ultrasonic_distance)
         ultrasonic_distance = min(ultrasonic_distance, 160)  
         error = ultrasonic_distance - target_value
         self.errors.append(error)
@@ -99,7 +108,7 @@ class SectionCrossBridge(Section):
         self.next_state()
 
     def extend_ultrasonic(self, robot):
-        robot.set_gripper_and_ultrasonic_angle(90, turn_speed=130, wait=False)  # Ultrasonic Sensor ausfahren
+        robot.set_gripper_and_ultrasonic_angle(100, turn_speed=130, wait=False)  # Ultrasonic Sensor ausfahren
         self.next_state()
 
     def spin_left(self, robot):
@@ -115,19 +124,21 @@ class SectionCrossBridge(Section):
 
     def turn_in_on_left_edge(self, robot):
         if len(self.errors) >= 10:
-            if sum(self.errors[-10:]) / 10 < 5:
+            last_error_avg = abs(sum(self.errors[-20:]) / 20)
+            print("Last 10 errors average: ", last_error_avg)
+            if last_error_avg < 4:
                 self.next_state()
                 return
-        self.p_controll(robot, target_value=80, prop_gain=1.5, speed=100)
+        self.p_controll(robot, target_value=80, prop_gain=1.5, speed=80)
 
     def up_section(self, robot):
-        if robot.driven_distance() > 700:
+        if robot.driven_distance() > 650:
             self.next_state()
             return
-        self.p_controll(robot, target_value=80, prop_gain=.7, speed=400)
+        self.p_controll(robot, target_value=80, prop_gain=.9, speed=300)
 
     def turn_1(self, robot):
-        if robot.driven_distance() > 1100:
+        if robot.driven_distance() > 1000:
             self.next_state()
             return
         self.p_controll(robot, target_value=80, prop_gain=1.2, speed=80)
@@ -135,24 +146,21 @@ class SectionCrossBridge(Section):
 
     def middle_section(self, robot):
         driven_distance = robot.driven_distance()
-        if driven_distance > 1800:
+        if driven_distance > 1750:
             self.next_state()
             return
-        
-        if driven_distance > 1600:
-            self.p_controll(robot, target_value=80, prop_gain=.7, speed=150+(750*(driven_distance-1600)/200))
-            return
 
-        self.p_controll(robot, target_value=80, prop_gain=.65, speed=900)
+        self.p_controll(robot, target_value=80, prop_gain=.85, speed=800)
 
     def turn_2(self, robot):
-        if robot.driven_distance() > 2200:
+        if robot.driven_distance() > 2050:
             self.next_state()
             return
-        self.p_controll(robot, target_value=100, prop_gain=1.2, speed=80)
+        self.p_controll(robot, target_value=100, prop_gain=1, speed=70)
+
 
     def down_section(self, robot):
-        if robot.driven_distance() > 2350:
+        if robot.driven_distance() > 2250:
             self.next_state()
             return
         self.p_controll(robot, target_value=80, prop_gain=1, speed=150)
