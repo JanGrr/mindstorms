@@ -9,13 +9,14 @@ class SectionMoveObject(Section):
     def __init__(self):
         super().__init__()
 
-        self.name = "Move Object"
-        self.target_distance = 180 # mm Abstand zur Wand links 
-        #TODO Distanz vllt näher ran, damit Sensor genauer wird????
+        self.name = "Move Object" 
+        #Drive Base Einstellungen
         self.speed = 280 # Vorwärtsgeschwindigkeit
         self.turn_acceleration = 300
         self.straight_acceleration = 300
         self.turn_rate = 100
+
+        self.target_distance = 180 # mm, Abstand zur Wand links 
         self.kp = 0.9 # P-Gain
         self.kd = 0.20 # D-Gain
         self.started = False
@@ -50,18 +51,13 @@ class SectionMoveObject(Section):
         print("nowInState:", new_state)   
     
 
-    # Fahren, entlang der linken Wand
     def run_one_step(self, robot):
-        #Sensor über Motor in die richtige Position bewegen
-        #1
         if self.state == 0:
             robot.stop()
             robot.drive_base.settings(self.speed, self.straight_acceleration, self.turn_rate, self.turn_acceleration)
             robot.set_gripper_and_ultrasonic_angle(self.SONICANGLE, turn_speed=250, wait=False)
             robot.calibrate_gripper_and_ultrasonic_angle()
             robot.reset_distance_and_angle()
-            #robot.drive_base.drive_time(280, 0, 1000)
-            #robot.drive_base.straight(100)
             robot.drive_base.drive(self.speed, 0)
             self.goto_state(1)
             
@@ -76,11 +72,9 @@ class SectionMoveObject(Section):
             dt = max(dt, 0.01)  # enforce minimum dt threshold
         
             d_error = (error - self.last_error) / dt
-            #steering = self.kp * error
             steering = self.kp * error + self.kd * d_error
         
             steering = max(min(steering, self.STEERING), -self.STEERING)
-            self.update_section_screen(robot, status1="pd-Regler", status2="", status3="")
         #2
             robot.drive_base.drive(self.speed, -steering)
         
@@ -114,10 +108,8 @@ class SectionMoveObject(Section):
         
         #6a
         if self.state == 4:
-
             #Farbe lesen
             detectedColor = robot.color_sensor.color()
-            self.update_section_screen(robot, status1=str(detectedColor), status2="WIR SIND NICHT IM QUADRAT", status3="")
 
             #Fahren bis Weiß erkannt wird
             robot.drive_base.drive(self.speed / 2, 0)
@@ -163,7 +155,6 @@ class SectionMoveObject(Section):
             robot.spin(15)
             dist2 = robot.ultrasonic_sensor.distance()
             print("Zweite", dist2)
-            self.update_section_screen(robot, status1=str(dist), status2=str(dist2) , status3="")
             while dist2 < dist:
                 dist = dist2
                 robot.spin(15)
@@ -189,7 +180,6 @@ class SectionMoveObject(Section):
             steering = self.kp * error + self.kd * d_error
         
             steering = max(min(steering, self.STEERING), -self.STEERING)
-            self.update_section_screen(robot, status1= str(dist) + " mm", status2="Error:" + str(error), status3="Steering: " + str(steering))
         #2
             robot.drive_base.drive(self.speed / 4, -steering)
         
@@ -198,21 +188,14 @@ class SectionMoveObject(Section):
             self.last_time = now
             #self.distance_travelled += self.speed * dt
          
-            self.update_section_screen(robot, status1=str(detectedColor), status2="Auf Blau warten", status3="")
             base_r, base_g, base_b = robot.base_rgb
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
             if relative_blue_change > 2:
                 detectedColor = Color.BLUE
-                robot.drive_base.stop()
-                self.goto_state(9)
-
-        if self.state == 9:
-            # beep
-            robot.ev3.speaker.beep()
-            robot.stop()
-            self.update_section_screen(robot, status1="Section Finished", status2="", status3="")
-            self.finished = True
-            self.goto_state(10)
+                robot.stop()
+                #robot.drive_base.stop()
+                robot.ev3.speaker.beep()
+                self.finished = True
 
 
 
