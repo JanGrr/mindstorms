@@ -23,7 +23,7 @@ class SectionMoveObject(Section):
         self.last_error = 0
         self.last_time = time.time()
         self.distance_travelled = 0
-        self.max_distance = 1800
+        self.max_distance = 1780
         self.turned = False
 
         self.state = 0  # Initialize state attribute
@@ -32,7 +32,7 @@ class SectionMoveObject(Section):
         self.SONICANGLE = -1
         self.STEERING = 70
         self.READYTOGRIP = 90
-        self.HOLDPRINGELS = 43
+        self.HOLDPRINGELS = 38
 
     def reset(self, robot):
         # TODO: Implement reset logic if needed
@@ -90,7 +90,7 @@ class SectionMoveObject(Section):
 
         if self.state == 2:
             robot.drive(80, 120)
-            while robot.angle_turned() < 80:
+            while robot.angle_turned() < 85:
                 pass
             robot.reset_distance_and_angle()
             robot.base_rgb = robot.color_sensor.rgb()
@@ -112,8 +112,8 @@ class SectionMoveObject(Section):
                 robot.drive_base.straight(-18)
                 robot.drive_base.drive(self.speed, -25)               
                 robot.spin(-25)
-                robot.straight(99) #noch ein Stück vorfahren, damit Objekt sicher gegriffen wird
-                robot.set_gripper_and_ultrasonic_angle(self.HOLDPRINGELS, turn_speed=250, wait=False)
+                robot.straight(103) #noch ein Stück vorfahren, damit Objekt sicher gegriffen wird
+                robot.set_gripper_and_ultrasonic_angle(self.HOLDPRINGELS, turn_speed=250, wait=True)
                 self.goto_state(4)
 
         if self.state == 4:
@@ -122,7 +122,7 @@ class SectionMoveObject(Section):
             while robot.angle_turned() > -90:
                 pass
             robot.drive_base.stop()
-            robot.straight(-180)
+            robot.straight(-50)
             robot.reset_distance_and_angle()
             robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
             robot.straight(-100)
@@ -136,7 +136,7 @@ class SectionMoveObject(Section):
             #    pass
             robot.reset_distance_and_angle()
             self.distance_travelled = 0
-            self.target_distance = 345
+            self.target_distance = 355
             self.max_distance = 400
             self.goto_state(6)
 
