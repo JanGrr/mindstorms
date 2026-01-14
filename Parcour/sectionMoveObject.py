@@ -23,7 +23,7 @@ class SectionMoveObject(Section):
         self.last_error = 0
         self.last_time = time.time()
         self.distance_travelled = 0
-        self.max_distance = 1780
+        self.max_distance = 1740
         self.turned = False
 
         self.state = 0  # Initialize state attribute
@@ -96,7 +96,7 @@ class SectionMoveObject(Section):
             robot.base_rgb = robot.color_sensor.rgb()
             self.distance_travelled = 0
             self.target_distance = 110
-            self.max_distance = 260 # weniger als bis zum Objekt um dann farbsuche zu starten
+            self.max_distance = 280 # weniger als bis zum Objekt um dann farbsuche zu starten
             self.turned = True
             self.goto_state(1)
         
@@ -118,7 +118,7 @@ class SectionMoveObject(Section):
 
         if self.state == 4:
             #robot.drive_base.drive_time(-120, -40, 3000)
-            robot.drive(-285, -40)
+            robot.drive(-225, -40)
             while robot.angle_turned() > -90:
                 pass
             robot.drive_base.stop()
@@ -137,7 +137,7 @@ class SectionMoveObject(Section):
             robot.reset_distance_and_angle()
             self.distance_travelled = 0
             self.target_distance = 355
-            self.max_distance = 400
+            self.max_distance = 20
             self.goto_state(6)
 
 
@@ -158,10 +158,11 @@ class SectionMoveObject(Section):
             
         if self.state == 7:
             dist = robot.ultrasonic_sensor.distance()
-            detectedColor = robot.color_sensor.rgb()
             if dist is None:    #falls Sensor nichts erkennt
                 dist = self.target_distance 
             
+            self.distance_travelled = robot.driven_distance()
+
             error = dist - self.target_distance
             now = time.time()
             dt = now - self.last_time if now != self.last_time else 0.01
@@ -176,8 +177,15 @@ class SectionMoveObject(Section):
         
             self.last_error = error
             self.last_time = now
-            #self.distance_travelled += self.speed * dt
-         
+
+            if self.distance_travelled >= self.max_distance:
+                robot.ev3.speaker.beep()
+                robot.drive_base.stop()
+                robot.drive(self.speed / 5, 0)
+                self.goto_state(8)
+
+        if self.state == 8:
+            detectedColor = robot.color_sensor.rgb()
             base_r, base_g, base_b = robot.base_rgb
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
             if relative_blue_change > 2:
