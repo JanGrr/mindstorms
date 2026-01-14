@@ -1,131 +1,94 @@
 from .section import Section
-from pybricks.tools import wait
 
 class State:    # Enum
-    CALIBRATING = 0
     SEEING_LINE = 1
     LOST_LINE = 2
-    GAP_RIGHT_TURN = 3
-    GAP_LEFT_TURN = 4
-    OBSTACLE = 5
 
 class SectionFollowLine(Section):
 
     def __init__(self):
         super().__init__()
         self.name = "Follow Line"
-        self.UNDERGROUND_REFLECTION = 9          # Durchschnittliche Reflection des Untergrunds
-        self.UNDERGROUND_DELTA = 10              # UNDERGROUND_REFLECTION + UNDERGROUND_DELTA = höchste Reflection des Untergrunds, dass wir trotzdem noch denken es ist der reine Untergrund ohne Linie
-        self.LINE_REFLECTION = 85
+        self.UNDERGROUND_REFLECTION = 7          # average reflection of the underground
+        self.UNDERGROUND_DELTA = 10              # UNDERGROUND_REFLECTION + UNDERGROUND_DELTA = highest reflection of the underground that we still consider as pure underground without line
+        self.LINE_REFLECTION = 77
         self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 2
         self.DRIVE_SPEED = 100                   # mm/s
         self.DRIVE_SPEED_OBSTACLE = 200          # mm/s
-        self.SEARCH_DRIVE_SPEED = 20
-        self.PROPORTIONAL_GAIN = 1.5               # Je höher, desto "zitternder"
-        self.INTEGRAL_GAIN = 0
-        self.integral = 0
+        self.TURN_SPEED = 40                     # deg/s
+        self.PROPORTIONAL_GAIN = 1.5             # the higher, the "shakier"
         self.DERIVATIVE_GAIN = 1.5
         self.last_error = 0
-        self.SEARCH_WIDTH_ANGLE = 30            # Wie breit der Suchwinkel nach links und rechts ist, wenn die Linie verloren wurde
-        self.SEARCH_TURN_SPEED = 30                # deg/s
-        self.angle_turned_since_line_lost = 0    # könnte man evtl weglassen & stattdessen delta berechnen!
-        self.line_lost = False
-        self.line_gap = False
         self.state = State.SEEING_LINE
-        self.status = "on line"
 
     def reset(self, robot):
         robot.stop()
-        self.status = "on line"
-        self.angle_turned_since_line_lost = 0
-        self.line_lost = False
-        self.line_gap = False
-        self.state = State.SEEING_LINE
-        self.integral = 0
+        self.finished = False
         self.last_error = 0
+        self.state = State.SEEING_LINE
 
     def run_one_step(self, robot):
-
-        r, g, b = robot.color_sensor.rgb()                             #TODO Um Blau Werte zu finden
+        r, g, b = robot.color_sensor.rgb()
 
         if self.check_for_blue_line(robot, r, g, b):
-            #robot.ev3.say("Blaue Linie gefunden")
+            robot.ev3.speaker.beep()
             self.finished = True
-            # TODO Celebration?
             return
 
         if robot.touch_sensor.pressed():
-            robot.stop()
-            self.state = State.OBSTACLE
-            self.status="Obstacle"
-            self.update_section_screen(robot, self.status)
-            # robot.ev3.speaker.say("Hindernis erkannt")
             self.drive_around_obstacle(robot)
             return
 
-        r, g, b = robot.color_sensor.rgb()      # statt reflection = robot.color_sensor.reflection(), da er sonst die ganze Zeit zwischen den Modis springt um die blaue Linie zu erkennen
-        reflection = (r + g + b) / 3            # Wert zwischen 0 und 100
+        r, g, b = robot.color_sensor.rgb()              # instead of reflection = robot.color_sensor.reflection(), because otherwise it keeps switching modes to detect the blue line
+        reflection = (r + g + b) / 3                    # reflection should be a value between 0 and 100
         seeing_line = reflection > self.UNDERGROUND_REFLECTION + self.UNDERGROUND_DELTA    # boolean
 
         if seeing_line:
+            self.pd_regler(robot, reflection)           # drive along the right edge of the line using a PD-controller
+            
             if self.state != State.SEEING_LINE:
-                self.status ="on line"
-                self.update_section_screen(robot, self.status)
-
-            self.state = State.SEEING_LINE
-            self.angle_turned_since_line_lost = 0
-
-            self.pid_regler(robot, reflection)    # Linie entlang fahren mithilfe eines P-Reglers
+                self.update_section_screen(robot, "on line")
+                self.state = State.SEEING_LINE
             
         else: # NOT SEEING LINE
-            self.angle_turned_since_line_lost = robot.angle_turned()
-            if self.state == State.SEEING_LINE: # Linie sollte nur verloren gehen, wenn starker Knick der Linie nach links (max. 90°) oder Lücke
-                self.status="lost line"
-                self.update_section_screen(robot, self.status)
-                self.state = State.LOST_LINE
-                robot.drive(0, -30)   # nach Links drehen mit 90°/s  # TODO vlt statt 0, doch bisschen Geschwindigkeit?
+
+            if self.state == State.SEEING_LINE:         # line should only be lost if there is a sharp bend in the line to the left (max. 90°) or a gap
+                robot.drive(0, -self.TURN_SPEED)        # turn left
                 robot.reset_distance_and_angle()
-                # TODO Display oder Ton?
+                self.update_section_screen(robot, "lost line")
+                self.state = State.LOST_LINE
 
             elif self.state == State.LOST_LINE:
-                # check for gap
-                if self.angle_turned_since_line_lost < -60:
-                    self.status="gap"
-                    self.update_section_screen(robot, self.status)
-                    robot.drive(10, self.SEARCH_TURN_SPEED)
-                    while robot.angle_turned() < 20:
-                        continue
-                    robot.drive(self.DRIVE_SPEED, turn_rate=-(self.DRIVE_SPEED / 3))  # Bogen fahren um Lücke zu überqueren
-                    # TODO Display oder Ton?
+                angle_turned_since_line_lost = robot.angle_turned()
+                if angle_turned_since_line_lost < -60:   # check for gap
+                    self.drive_around_gap(robot)
 
-            else:
-                return  # do nothing, just search for line when in state.OBSTACLE
-
-    def pid_regler(self, robot, reflection):
+    def pd_regler(self, robot, reflection):
         error = reflection - self.TARGET_VALUE
-        self.integral = self.integral + error
         derivative = error - self.last_error
         self.last_error = error
-        correction = (error * self.PROPORTIONAL_GAIN) + (self.integral * self.INTEGRAL_GAIN) + (derivative * self.DERIVATIVE_GAIN)
-        if error < 30:
-            robot.drive(self.DRIVE_SPEED, turn_rate=correction)
-        else:
-            robot.drive(drive_speed=0, turn_rate=correction)
+        correction = (error * self.PROPORTIONAL_GAIN) + (derivative * self.DERIVATIVE_GAIN)
 
+        speed = self.DRIVE_SPEED - (self.DRIVE_SPEED / 25) * abs(error)
+        speed = max(speed, 0)
+        robot.drive(drive_speed=speed, turn_rate=correction)
 
-    def calibrate(self, robot):     # TODO lieber min und max Werte speicher und LINE_REFLECTION = max und UNDERGROUND_REFLECTION = min
-        self.LINE_REFLECTION = robot.color_sensor.reflection()
-        robot.ev3.speaker.say("Linie " + str(self.LINE_REFLECTION))
-        robot.spin(40)
-        self.UNDERGROUND_REFLECTION = robot.color_sensor.reflection()
-        robot.ev3.speaker.say("Untergrund " + str(self.UNDERGROUND_REFLECTION))
-        robot.spin(-40)
+    def drive_around_gap(self, robot):
+        robot.drive(drive_speed=(self.TURN_SPEED / 3), turn_rate=self.TURN_SPEED)
+        self.update_section_screen(robot, "gap")
+        while robot.angle_turned() < 20:            # Turn back a bit more then just straight to find the right side of the line again
+            continue
+        robot.drive(self.DRIVE_SPEED, turn_rate=-(self.DRIVE_SPEED / 3))  # drive in a slight arc towards the right edge of the line
 
     def drive_around_obstacle(self, robot):
+        robot.stop()
+        self.state = State.LOST_LINE
+        self.update_section_screen(robot, "Obstacle")
         robot.straight(-10)
         robot.spin(75)
         robot.drive(self.DRIVE_SPEED_OBSTACLE, turn_rate=-(self.DRIVE_SPEED_OBSTACLE / 4))  # Bogen fahren
         
+        # Quickly around the obstacle, but slowly approach the line
         already_distance_driven = robot.driven_distance()
         while robot.driven_distance() < already_distance_driven + 450:
             pass
