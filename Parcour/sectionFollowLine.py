@@ -85,11 +85,12 @@ class SectionFollowLine(Section):
         self.state = State.LOST_LINE
         self.update_section_screen(robot, "Obstacle")
         robot.straight(-30)
-        robot.spin(75)
+        robot.spin(72)
         robot.drive(self.DRIVE_SPEED_OBSTACLE, turn_rate=-(self.DRIVE_SPEED_OBSTACLE / 4))  # Bogen fahren
         
         # Quickly around the obstacle, but slowly approach the line
         already_distance_driven = robot.driven_distance()
         while robot.driven_distance() < already_distance_driven + 450:
             pass
+        robot.reset_distance_and_angle()
         robot.drive(self.DRIVE_SPEED, turn_rate=-(self.DRIVE_SPEED / 4))

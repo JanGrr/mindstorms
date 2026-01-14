@@ -2,8 +2,6 @@ from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor, UltrasonicSensor, GyroSensor)
 from pybricks.parameters import Port, Stop, Direction
 from pybricks.robotics import DriveBase
-from pybricks.tools import wait
-
 
 class Robot:
 
@@ -64,9 +62,4 @@ class Robot:
     # gets a target anngle in degrees and moves the gripper and ultrasonic sensor to that angle
     def set_gripper_and_ultrasonic_angle(self, target_angle, turn_speed=20, wait=True):
         self.__motor_small.run_target(speed=turn_speed, target_angle=target_angle, then=Stop.HOLD, wait=wait)
-        
-        
-
-
-            
         
