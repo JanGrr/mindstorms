@@ -25,14 +25,13 @@ class SectionMoveObject(Section):
         self.distance_travelled = 0
         self.max_distance = 1800
         self.turned = False
-        self.findBlue = False
 
         self.state = 0  # Initialize state attribute
         
         #Konstanten
         self.SONICANGLE = -1
         self.STEERING = 70
-        self.GRIPPINGANGLE = 90
+        self.READYTOGRIP = 90
         self.HOLDPRINGELS = 43
 
     def reset(self, robot):
@@ -42,9 +41,8 @@ class SectionMoveObject(Section):
         self.distance_travelled = 0
         self.last_time = time.time()
         self.turned = False
-        self.findBlue = False
         self.finished = False
-        robot.stop()
+        robot.drive_base.stop()
 
     def goto_state(self, new_state):
         self.state = new_state
@@ -52,8 +50,8 @@ class SectionMoveObject(Section):
     
 
     def run_one_step(self, robot):
-        if self.state == 0:
-            robot.stop()
+        if self.state == 0: 
+            robot.drive_base.stop()
             robot.drive_base.settings(self.speed, self.straight_acceleration, self.turn_rate, self.turn_acceleration)
             robot.set_gripper_and_ultrasonic_angle(self.SONICANGLE, turn_speed=250, wait=False)
             robot.calibrate_gripper_and_ultrasonic_angle()
@@ -75,7 +73,6 @@ class SectionMoveObject(Section):
             steering = self.kp * error + self.kd * d_error
         
             steering = max(min(steering, self.STEERING), -self.STEERING)
-        #2
             robot.drive_base.drive(self.speed, -steering)
         
         
@@ -85,18 +82,15 @@ class SectionMoveObject(Section):
             self.distance_travelled = robot.driven_distance()
             if self.distance_travelled >= self.max_distance:
                 robot.drive_base.stop()
-                if self.findBlue:
-                    self.goto_state(7)  # Move to find blue
-                elif self.turned:
-                    self.goto_state(4)
-                else:
+                if self.turned:
                     self.goto_state(3)
+                else:
+                    self.goto_state(2)
                 
 
-        #4&5
-        if self.state == 3:
+        if self.state == 2:
             robot.drive(80, 120)
-            while robot.angle_turned() < 90:
+            while robot.angle_turned() < 80:
                 pass
             robot.reset_distance_and_angle()
             robot.base_rgb = robot.color_sensor.rgb()
@@ -106,37 +100,36 @@ class SectionMoveObject(Section):
             self.turned = True
             self.goto_state(1)
         
-        #6a
-        if self.state == 4:
+        if self.state == 3:
             #Farbe lesen
             detectedColor = robot.color_sensor.color()
 
             #Fahren bis Weiß erkannt wird
             robot.drive_base.drive(self.speed / 2, 0)
             if detectedColor == Color.WHITE:
-                robot.stop()
-                robot.set_gripper_and_ultrasonic_angle(self.GRIPPINGANGLE, turn_speed=250, wait=False)
+                robot.drive_base.stop()
+                robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
                 robot.drive_base.straight(-18)
                 robot.drive_base.drive(self.speed, -25)               
                 robot.spin(-25)
                 robot.straight(99) #noch ein Stück vorfahren, damit Objekt sicher gegriffen wird
                 robot.set_gripper_and_ultrasonic_angle(self.HOLDPRINGELS, turn_speed=250, wait=False)
-                self.goto_state(5)
+                self.goto_state(4)
 
-        if self.state == 5:
+        if self.state == 4:
             #robot.drive_base.drive_time(-120, -40, 3000)
             robot.drive(-285, -40)
             while robot.angle_turned() > -90:
                 pass
-            robot.stop()
+            robot.drive_base.stop()
             robot.straight(-180)
             robot.reset_distance_and_angle()
-            robot.set_gripper_and_ultrasonic_angle(self.GRIPPINGANGLE, turn_speed=250, wait=False)
+            robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
             robot.straight(-100)
             robot.set_gripper_and_ultrasonic_angle(self.SONICANGLE, turn_speed=250, wait=False)
-            self.goto_state(6)
+            self.goto_state(5)
 
-        if self.state == 6:
+        if self.state == 5:
             robot.spin(145)
             #robot.drive(30, 30)
             #while robot.angle_turned() < 145:
@@ -145,11 +138,10 @@ class SectionMoveObject(Section):
             self.distance_travelled = 0
             self.target_distance = 345
             self.max_distance = 400
-            self.findBlue = True
-            self.goto_state(7)
+            self.goto_state(6)
 
 
-        if self.state == 7:
+        if self.state == 6:
             dist = robot.ultrasonic_sensor.distance()
             print(dist)
             robot.spin(15)
@@ -162,9 +154,9 @@ class SectionMoveObject(Section):
                 print("Zweite", dist2)
 
             robot.ev3.speaker.beep()
-            self.goto_state(8)
+            self.goto_state(7)
             
-        if self.state == 8:
+        if self.state == 7:
             dist = robot.ultrasonic_sensor.distance()
             detectedColor = robot.color_sensor.rgb()
             if dist is None:    #falls Sensor nichts erkennt
@@ -176,11 +168,9 @@ class SectionMoveObject(Section):
             dt = max(dt, 0.01)  # enforce minimum dt threshold
         
             d_error = (error - self.last_error) / dt
-            #steering = self.kp * error
             steering = self.kp * error + self.kd * d_error
         
             steering = max(min(steering, self.STEERING), -self.STEERING)
-        #2
             robot.drive_base.drive(self.speed / 4, -steering)
         
         
@@ -196,7 +186,3 @@ class SectionMoveObject(Section):
                 #robot.drive_base.stop()
                 robot.ev3.speaker.beep()
                 self.finished = True
-
-
-
-        
