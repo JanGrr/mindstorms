@@ -17,7 +17,7 @@ class Section:
         pass
 
     def check_for_blue_line(self, robot, r, g, b):
-        is_blue = r<20 and g<45 and b>50
+        is_blue = r<10 and b>30
         if is_blue:
             robot.ev3.speaker.beep(frequency=300, duration=200)
             robot.stop()
