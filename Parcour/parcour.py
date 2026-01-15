@@ -40,8 +40,4 @@ class Parcour:
         self.running = False
         self.current_section_index = 0
         self.menu.update()
-
-    def reset(self):
-        self.current_section_index = 0
-        self.running = False
         
