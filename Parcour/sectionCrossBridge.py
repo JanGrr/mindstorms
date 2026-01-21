@@ -90,7 +90,6 @@ class SectionCrossBridge(Section):
 
     def p_controll(self, robot, target_value=80, prop_gain=1, speed=50):
         ultrasonic_distance = robot.ultrasonic_sensor.distance()
-        print("State: ", self.state, "Ultrasonic Distance: ", ultrasonic_distance)
         ultrasonic_distance = min(ultrasonic_distance, 160)  
         error = ultrasonic_distance - target_value
         self.errors.append(error)
@@ -187,6 +186,7 @@ class SectionCrossBridge(Section):
 
     def finished_state(self, robot):
         self.finished = True
+        robot.stop()
         
 
     def sees_blue(self, robot):
