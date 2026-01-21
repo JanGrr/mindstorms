@@ -26,6 +26,7 @@ class SectionCrossBridge(Section):
     def reset(self, robot):
         robot.set_gripper_and_ultrasonic_angle(0)
         robot.stop()
+        robot.reset_drive_base_settings()
         self.finished = False
 
 
