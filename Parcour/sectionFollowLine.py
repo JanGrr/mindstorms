@@ -95,11 +95,11 @@ class SectionFollowLine(Section):
         self.update_section_screen(robot, "Obstacle")
         robot.straight(-30)
         robot.spin(72)
-        robot.drive(self.DRIVE_SPEED_OBSTACLE, turn_rate=-(self.DRIVE_SPEED_OBSTACLE / 4))  # drive in an arc around the obstacle
+        robot.drive(self.DRIVE_SPEED_OBSTACLE, turn_rate=-(self.DRIVE_SPEED_OBSTACLE / 3.9))  # drive in an arc around the obstacle
         
         # fast around the obstacle, but slowly approaching the line
         already_distance_driven = robot.driven_distance()
-        while robot.driven_distance() < already_distance_driven + 450:
+        while robot.driven_distance() < already_distance_driven + 470:
             pass
         robot.reset_distance_and_angle()
-        robot.drive(drive_speed=(self.DRIVE_SPEED / 1.5), turn_rate=-(self.DRIVE_SPEED / 4))
+        robot.drive(drive_speed=(self.DRIVE_SPEED / 3), turn_rate=(self.DRIVE_SPEED / 10)) # robot.drive(drive_speed=(self.DRIVE_SPEED / 1.5), turn_rate=-(self.DRIVE_SPEED / 4))
