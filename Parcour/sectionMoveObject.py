@@ -35,14 +35,13 @@ class SectionMoveObject(Section):
         self.HOLDPRINGELS = 38
 
     def reset(self, robot):
-        # TODO: Implement reset logic if needed
         self.started = False
         self.last_error = 0
         self.distance_travelled = 0
         self.last_time = time.time()
         self.turned = False
         self.finished = False
-        robot.stop()
+        robot.drive_base.stop()
 
     def goto_state(self, new_state):
         self.state = new_state
@@ -95,7 +94,7 @@ class SectionMoveObject(Section):
             robot.reset_distance_and_angle()
             robot.base_rgb = robot.color_sensor.rgb()
             self.distance_travelled = 0
-            self.target_distance = 110
+            self.target_distance = 115
             self.max_distance = 280 # weniger als bis zum Objekt um dann farbsuche zu starten
             self.turned = True
             self.goto_state(1)
@@ -122,7 +121,7 @@ class SectionMoveObject(Section):
             while robot.angle_turned() > -90:
                 pass
             robot.drive_base.stop()
-            robot.straight(-130)
+            robot.straight(-140)
             robot.reset_distance_and_angle()
             robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
             robot.straight(-100)
@@ -189,7 +188,6 @@ class SectionMoveObject(Section):
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
             if relative_blue_change > 3:
                 detectedColor = Color.BLUE
-                robot.stop()
-                #robot.drive_base.stop()
+                robot.drive_base.stop()
                 robot.ev3.speaker.beep()
                 self.finished = True
