@@ -11,7 +11,11 @@ menu = Menu(robot, course)
 
 robot.calibrate_gripper_and_ultrasonic_angle()
 
+iterantion = 0
+
 while True:
-    menu.check_buttonpress()
+    iterantion += 1
+    if iterantion % 25 == 0:
+        menu.check_buttonpress()
     if course.running:
         course.run_one_step(robot)
