@@ -110,6 +110,7 @@ class SectionCrossBridge(Section):
         self.next_state()
 
     def drive_security(self, robot):
+        robot.drive_base.stop()
         robot.drive_base.settings(straight_speed=400, straight_acceleration=150, turn_rate=400, turn_acceleration=150)
         robot.straight(200)  # Kleines stück vorfahren
         self.next_state()
