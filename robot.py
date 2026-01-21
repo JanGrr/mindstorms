@@ -33,6 +33,9 @@ class Robot:
     def straight(self, distance_mm): # Programmcode läuft weiter oder?
         self.drive_base.straight(distance_mm)
 
+    def reset_drive_base_settings(self):
+        self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
+
     # Gyro-Idee zum geradeaus fahren
     # sinnvoll in z.B. 
     # drive_base.reset()
