@@ -35,14 +35,13 @@ class SectionMoveObject(Section):
         self.HOLDPRINGELS = 38
 
     def reset(self, robot):
-        # TODO: Implement reset logic if needed
         self.started = False
         self.last_error = 0
         self.distance_travelled = 0
         self.last_time = time.time()
         self.turned = False
         self.finished = False
-        robot.stop()
+        robot.drive_base.stop()
 
     def goto_state(self, new_state):
         self.state = new_state
@@ -189,7 +188,6 @@ class SectionMoveObject(Section):
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
             if relative_blue_change > 3:
                 detectedColor = Color.BLUE
-                robot.stop()
-                #robot.drive_base.stop()
+                robot.drive_base.stop()
                 robot.ev3.speaker.beep()
                 self.finished = True
