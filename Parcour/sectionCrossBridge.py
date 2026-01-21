@@ -27,6 +27,13 @@ class SectionCrossBridge(Section):
         robot.set_gripper_and_ultrasonic_angle(0)
         robot.stop()
         robot.reset_drive_base_settings()
+        self.state_index = 0
+        self.state = self.states[self.state_index]
+        self.robot = None
+        self.sectionStarted = False
+        self.errors = []
+        self.waited_for_ultrasonic = False
+        self.unreasonable_ultrasonic_count = 0
         self.finished = False
 
 
