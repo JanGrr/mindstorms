@@ -34,6 +34,8 @@ class Robot:
         self.drive_base.straight(distance_mm)
 
     def reset_drive_base_settings(self):
+        self.drive_base.stop()
+        
         self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
 
     # Gyro-Idee zum geradeaus fahren
