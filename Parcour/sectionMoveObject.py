@@ -94,7 +94,7 @@ class SectionMoveObject(Section):
             robot.reset_distance_and_angle()
             robot.base_rgb = robot.color_sensor.rgb()
             self.distance_travelled = 0
-            self.target_distance = 110
+            self.target_distance = 115
             self.max_distance = 280 # weniger als bis zum Objekt um dann farbsuche zu starten
             self.turned = True
             self.goto_state(1)
@@ -121,7 +121,7 @@ class SectionMoveObject(Section):
             while robot.angle_turned() > -90:
                 pass
             robot.drive_base.stop()
-            robot.straight(-130)
+            robot.straight(-140)
             robot.reset_distance_and_angle()
             robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
             robot.straight(-100)
