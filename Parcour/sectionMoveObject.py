@@ -42,7 +42,7 @@ class SectionMoveObject(Section):
         self.last_time = time.time()
         self.turned = False
         self.finished = False
-        robot.drive_base.stop()
+        robot.stop()
 
     def goto_state(self, new_state):
         self.state = new_state
