@@ -122,7 +122,7 @@ class SectionMoveObject(Section):
             while robot.angle_turned() > -90:
                 pass
             robot.drive_base.stop()
-            robot.straight(-110)
+            robot.straight(-130)
             robot.reset_distance_and_angle()
             robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
             robot.straight(-100)
@@ -179,7 +179,6 @@ class SectionMoveObject(Section):
             self.last_time = now
 
             if self.distance_travelled >= self.max_distance:
-                robot.ev3.speaker.beep()
                 robot.drive_base.stop()
                 robot.drive(self.speed / 5, 0)
                 self.goto_state(8)
@@ -188,7 +187,7 @@ class SectionMoveObject(Section):
             detectedColor = robot.color_sensor.rgb()
             base_r, base_g, base_b = robot.base_rgb
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
-            if relative_blue_change > 2:
+            if relative_blue_change > 3:
                 detectedColor = Color.BLUE
                 robot.stop()
                 #robot.drive_base.stop()
