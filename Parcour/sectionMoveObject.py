@@ -122,7 +122,7 @@ class SectionMoveObject(Section):
             while robot.angle_turned() > -90:
                 pass
             robot.drive_base.stop()
-            robot.straight(-50)
+            robot.straight(-110)
             robot.reset_distance_and_angle()
             robot.set_gripper_and_ultrasonic_angle(self.READYTOGRIP, turn_speed=250, wait=False)
             robot.straight(-100)
