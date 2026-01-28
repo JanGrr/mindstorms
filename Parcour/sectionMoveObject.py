@@ -93,6 +93,7 @@ class SectionMoveObject(Section):
                 pass
             robot.reset_distance_and_angle()
             robot.base_rgb = robot.color_sensor.rgb()
+            robot.ev3.speaker.beep() #beep when base color is recorded
             self.distance_travelled = 0
             self.target_distance = 115
             self.max_distance = 280 # weniger als bis zum Objekt um dann farbsuche zu starten
