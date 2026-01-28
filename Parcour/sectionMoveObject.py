@@ -89,11 +89,11 @@ class SectionMoveObject(Section):
 
         if self.state == 2:
             robot.drive(80, 120)
-            while robot.angle_turned() < 83:
+            robot.base_rgb = robot.color_sensor.rgb()
+            print("Base RGB set to:", robot.base_rgb)
+            while robot.angle_turned() < 77:
                 pass
             robot.reset_distance_and_angle()
-            robot.base_rgb = robot.color_sensor.rgb()
-            robot.ev3.speaker.beep() #beep when base color is recorded
             self.distance_travelled = 0
             self.target_distance = 111
             self.max_distance = 280 # weniger als bis zum Objekt um dann farbsuche zu starten
@@ -185,9 +185,11 @@ class SectionMoveObject(Section):
 
         if self.state == 8:
             detectedColor = robot.color_sensor.rgb()
+            print("Detected Color RGB:", detectedColor)
+            print("Base Color RGB:", robot.base_rgb)
             base_r, base_g, base_b = robot.base_rgb
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
-            if relative_blue_change > 3:
+            if relative_blue_change > 3 and detectedColor[0] < 20:
                 detectedColor = Color.BLUE
                 robot.drive_base.stop()
                 robot.ev3.speaker.beep()
