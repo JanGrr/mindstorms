@@ -16,7 +16,7 @@ class SectionMoveObject(Section):
         self.straight_acceleration = 300
         self.turn_rate = 100
 
-        self.target_distance = 180 # mm, Abstand zur Wand links 
+        self.target_distance = 178 # mm, Abstand zur Wand links 
         self.kp = 0.9 # P-Gain
         self.kd = 0.20 # D-Gain
         self.started = False
@@ -89,13 +89,13 @@ class SectionMoveObject(Section):
 
         if self.state == 2:
             robot.drive(80, 120)
-            while robot.angle_turned() < 85:
+            while robot.angle_turned() < 83:
                 pass
             robot.reset_distance_and_angle()
             robot.base_rgb = robot.color_sensor.rgb()
             robot.ev3.speaker.beep() #beep when base color is recorded
             self.distance_travelled = 0
-            self.target_distance = 115
+            self.target_distance = 111
             self.max_distance = 280 # weniger als bis zum Objekt um dann farbsuche zu starten
             self.turned = True
             self.goto_state(1)
