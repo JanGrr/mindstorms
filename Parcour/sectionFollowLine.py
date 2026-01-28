@@ -14,22 +14,29 @@ class SectionFollowLine(Section):
         self.UNDERGROUND_DELTA = 5               # UNDERGROUND_REFLECTION + UNDERGROUND_DELTA = highest reflection of the underground that we still consider as pure underground without line
         self.LINE_REFLECTION = 78
         self.TARGET_VALUE = (self.UNDERGROUND_REFLECTION + self.LINE_REFLECTION) / 2
-        self.DRIVE_SPEED = 150                   # mm/s
+        self.DRIVE_SPEED = 120                   # mm/s     -> if changed here, also adjust in "if self.k == 100"
         self.DRIVE_SPEED_OBSTACLE = 200          # mm/s
         self.TURN_SPEED = 40                     # deg/s
         self.PROPORTIONAL_GAIN = 1.2             # the higher, the "shakier"
         self.DERIVATIVE_GAIN = 2
         self.last_error = 0
         self.state = State.SEEING_LINE
-        self.k = 0
+        self.k = 500
 
     def reset(self, robot):
         robot.stop()
         self.finished = False
         self.last_error = 0
         self.state = State.SEEING_LINE
+        self.k = 500
 
     def run_one_step(self, robot):
+        if self.k == 500:                               # because of overshoot when finding the line after abstacle
+            print(str(self.DRIVE_SPEED))
+            self.DRIVE_SPEED = 120
+            print(str(self.DRIVE_SPEED))
+        self.k += 1
+
         r, g, b = robot.color_sensor.rgb()
 
         if self.check_for_blue_line(robot, r, g, b):
@@ -37,13 +44,11 @@ class SectionFollowLine(Section):
             self.finished = True
             return
 
-        if self.k > 10:                                 # just check every tenth time for faster loop cicles 9/10 times
+        if self.k % 10 == 0:                            # just check every tenth time for faster loop cicles 9/10 times
             if robot.touch_sensor.pressed():            # before: 
                 self.drive_around_obstacle(robot)       # if robot.touch_sensor.pressed():
                 return                                  #     self.drive_around_obstacle(robot)
-            self.k = 0                                  #     return
-        else:
-            self.k += 1
+                                                        #     return
 
         r, g, b = robot.color_sensor.rgb()              # instead of "reflection = robot.color_sensor.reflection()", because otherwise it keeps switching modes to detect the blue line
         reflection = (r + g + b) / 3                    # reflection should be a value between 0 and 100
@@ -60,7 +65,7 @@ class SectionFollowLine(Section):
         else: # NOT SEEING LINE
 
             if self.state == State.SEEING_LINE:         # line should only be lost if there is a sharp bend in the line to the left (max. 90°) or a gap
-                robot.drive(8, -self.TURN_SPEED)        # 8 instead of 0 because of Gap Problem
+                robot.drive(20, -self.TURN_SPEED)        # 8 instead of 0 because of Gap Problem
                 robot.reset_distance_and_angle()
                 self.update_section_screen(robot, "lost line")
                 self.state = State.LOST_LINE
@@ -83,7 +88,7 @@ class SectionFollowLine(Section):
         robot.drive(drive_speed=speed, turn_rate=correction)
 
     def drive_around_gap(self, robot):
-        robot.drive(drive_speed=(self.TURN_SPEED / 5), turn_rate=self.TURN_SPEED)   # bofore: "drive_speed=(self.TURN_SPEED / 4)" cause of Gap Problem
+        robot.drive(drive_speed=(self.TURN_SPEED / 5), turn_rate=self.TURN_SPEED)   # bofore: "drive_speed=(self.TURN_SPEED / 4)" cause of Gap Problem   #TODO macht "drive_speed=(self.TURN_SPEED / 4)" doch mehr sinn?"
         self.update_section_screen(robot, "gap")
         while robot.angle_turned() < 20:            # Turn back a bit more then just straight to find the right side of the line again
             continue
@@ -102,4 +107,6 @@ class SectionFollowLine(Section):
         while robot.driven_distance() < already_distance_driven + 470:
             pass
         robot.reset_distance_and_angle()
-        robot.drive(drive_speed=(self.DRIVE_SPEED / 3), turn_rate=(self.DRIVE_SPEED / 10)) # robot.drive(drive_speed=(self.DRIVE_SPEED / 1.5), turn_rate=-(self.DRIVE_SPEED / 4))
+        robot.drive(drive_speed=(self.DRIVE_SPEED / 3), turn_rate=0) # robot.drive(drive_speed=(self.DRIVE_SPEED / 1.5), turn_rate=-(self.DRIVE_SPEED / 4))
+        self.DRIVE_SPEED = 30                                        # because of overshoot when finding the line again
+        self.k = 0
