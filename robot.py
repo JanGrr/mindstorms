@@ -21,7 +21,7 @@ class Robot:
         self.color_sensor = ColorSensor(Port.S1)
         self.touch_sensor = TouchSensor(Port.S2)
         self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
-        # self.gyro_sensor = GyroSensor(Port.S4)
+        self.gyro_sensor = GyroSensor(Port.S4)
         self.ev3.speaker.set_speech_options(language='de', voice='m1', speed=120, pitch=0)  # speed = Wörter/Minute, pitch=0-99
 
     def drive(self, drive_speed, turn_rate):                          # drive_speed in mm/s, turn_rate in deg/s

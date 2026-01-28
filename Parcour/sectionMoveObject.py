@@ -11,7 +11,7 @@ class SectionMoveObject(Section):
 
         self.name = "Move Object" 
         #Drive Base Einstellungen
-        self.speed = 280 # Vorwärtsgeschwindigkeit
+        self.speed = 230 # Vorwärtsgeschwindigkeit
         self.turn_acceleration = 300
         self.straight_acceleration = 300
         self.turn_rate = 100
@@ -23,7 +23,7 @@ class SectionMoveObject(Section):
         self.last_error = 0
         self.last_time = time.time()
         self.distance_travelled = 0
-        self.max_distance = 1740
+        self.max_distance = 1760
         self.turned = False
 
         self.state = 0  # Initialize state attribute
@@ -91,7 +91,7 @@ class SectionMoveObject(Section):
             robot.drive(80, 120)
             robot.base_rgb = robot.color_sensor.rgb()
             print("Base RGB set to:", robot.base_rgb)
-            while robot.angle_turned() < 77:
+            while robot.angle_turned() < 80:
                 pass
             robot.reset_distance_and_angle()
             self.distance_travelled = 0
@@ -119,7 +119,7 @@ class SectionMoveObject(Section):
         if self.state == 4:
             #robot.drive_base.drive_time(-120, -40, 3000)
             robot.drive(-225, -40)
-            while robot.angle_turned() > -90:
+            while robot.angle_turned() > -85:
                 pass
             robot.drive_base.stop()
             robot.straight(-140)
@@ -130,7 +130,7 @@ class SectionMoveObject(Section):
             self.goto_state(5)
 
         if self.state == 5:
-            robot.spin(145)
+            robot.spin(160)
             #robot.drive(30, 30)
             #while robot.angle_turned() < 145:
             #    pass
@@ -144,12 +144,12 @@ class SectionMoveObject(Section):
         if self.state == 6:
             dist = robot.ultrasonic_sensor.distance()
             print(dist)
-            robot.spin(15)
+            robot.spin(5)
             dist2 = robot.ultrasonic_sensor.distance()
             print("Zweite", dist2)
             while dist2 < dist:
                 dist = dist2
-                robot.spin(15)
+                robot.spin(5)
                 dist2 = robot.ultrasonic_sensor.distance()
                 print("Zweite", dist2)
 
