@@ -7,46 +7,32 @@ class Robot:
 
     def __init__(self):
         self.ev3 = EV3Brick()
-        self.motor_left = Motor(Port.A, Direction.COUNTERCLOCKWISE, gears=None)                                         # oder COUNTERCLOCKWISE, Gears z.B. [14, 20]
+        self.motor_left = Motor(Port.A, Direction.COUNTERCLOCKWISE, gears=None)                                         # Gears e.g. [14, 20]
         self.motor_right = Motor(Port.B, Direction.COUNTERCLOCKWISE, gears=None)
-        self.WHEEL_DIAMETER_MM = 55                                 # Raddurchmesser der Antriebsräder in mm
-                                                                    # Wenn der Roboter bei straight(1000) nicht weit genug fährt, WHEEL_DIAMETER_MM leicht verringern
-        self.AXLE_TRACK_MM = 105                                    # Abstand der beiden angetriebenen Räder voneinander in mm
-                                                                    # Wenn der Roboter bei spin(360) weniger als 360° dreht, AXLE_TRACK_MM leicht erhöhen (aber immer erst WHEEL_DIAMETER_MM anpassen)
-        self.drive_base = DriveBase(self.motor_left, self.motor_right, self.WHEEL_DIAMETER_MM, self.AXLE_TRACK_MM)      # Klasse die bereits Fahrfunktionen implementiert
-        self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
+        self.WHEEL_DIAMETER_MM = 55                                 # Wheel diameter of drive wheels in mm         
+                                                                    # If the robot does not drive far enough with straight(1000), slightly decrease WHEEL_DIAMETER_MM
+        self.AXLE_TRACK_MM = 105                                    # Distance between the two driven wheels in mm
+                                                                    # If the robot turns less than 360° with spin(360), slightly increase AXLE_TRACK_MM (but always adjust WHEEL_DIAMETER_MM first)
+        self.drive_base = DriveBase(self.motor_left, self.motor_right, self.WHEEL_DIAMETER_MM, self.AXLE_TRACK_MM)      # Class that already implements driving functions
+        self.drive_base.settings(straight_speed=200, straight_acceleration=100, turn_rate=200, turn_acceleration=100)
         self.__motor_small = Motor(Port.C, Direction.CLOCKWISE, gears=None)
-        self.__motor_small.reset_angle(0)
-        self.gripper_and_ultrasonic_rotation_degrees = 0
         self.color_sensor = ColorSensor(Port.S1)
         self.touch_sensor = TouchSensor(Port.S2)
         self.ultrasonic_sensor = UltrasonicSensor(Port.S3)
         self.gyro_sensor = GyroSensor(Port.S4)
-        self.ev3.speaker.set_speech_options(language='de', voice='m1', speed=120, pitch=0)  # speed = Wörter/Minute, pitch=0-99
 
     def drive(self, drive_speed, turn_rate):                          # drive_speed in mm/s, turn_rate in deg/s
         self.drive_base.drive(drive_speed, turn_rate)                      # continoues drive untill stop() is called
 
-    def stop(self): # einzelnen Motoren sofort anhalten, da drive_base.stop() die Motoren ausrollen lassen würde
+    def stop(self): # Stop individual motors immediately, because drive_base.stop() would let the motors coast
         self.drive_base.stop(Stop.HOLD)
 
-    def straight(self, distance_mm): # Programmcode läuft weiter oder?
+    def straight(self, distance_mm):
         self.drive_base.straight(distance_mm)
 
     def reset_drive_base_settings(self):
-        self.drive_base.stop()
-        
-        self.drive_base.settings(straight_speed=100, straight_acceleration=50, turn_rate=100, turn_acceleration=50)
-
-    # Gyro-Idee zum geradeaus fahren
-    # sinnvoll in z.B. 
-    # drive_base.reset()
-    # gyro_sensor.reset_angle(0)
-    # while not touch_sensor.pressed(): 
-    # oder while drive_base.distance() < distance_mm:
-    # def straight_with_gyro():
-    #     correction = 0 - gyro_sensor.angle() * constant         # target_angle = 0 sinnvoller Wert für Konstante so 1-3
-    #     drive_base.drive(drive_speed= , turn_rate=correction)
+        self.drive_base.stop()                  # NOT self.drive_base.stop(Stop.HOLD), bit confusing
+        self.drive_base.settings(straight_speed=200, straight_acceleration=100, turn_rate=200, turn_acceleration=100)
 
     def spin(self, angle):
         self.drive_base.turn(angle)
@@ -61,10 +47,9 @@ class Robot:
         self.drive_base.reset()
 
     def calibrate_gripper_and_ultrasonic_angle(self):
-        self.__motor_small.run_until_stalled(speed=-40, then=Stop.HOLD, duty_limit=80)  # Gripper und Ultraschallsensor ganz einfahren
+        self.__motor_small.run_until_stalled(speed=-40, then=Stop.HOLD, duty_limit=80)  # Fully retract gripper and ultrasonic sensor
         self.__motor_small.reset_angle(0)
 
-    # gets a target anngle in degrees and moves the gripper and ultrasonic sensor to that angle
+    # gets a target angle in degrees and moves the gripper and ultrasonic sensor to that angle
     def set_gripper_and_ultrasonic_angle(self, target_angle, turn_speed=20, wait=True):
         self.__motor_small.run_target(speed=turn_speed, target_angle=target_angle, then=Stop.HOLD, wait=wait)
-        

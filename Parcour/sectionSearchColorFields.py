@@ -6,7 +6,7 @@ class State:    # Enum
     FOLLOW_EAST_WALL = 1
     FOLLOW_WEST_WALL = 2
 
-class SectionSearchColorFields(Section):
+class SectionSearchColorFields(Section):        # done by Jan
     
     def __init__(self):
         super().__init__()
@@ -15,40 +15,40 @@ class SectionSearchColorFields(Section):
         self.target_distance_to_wall = 740
         self.PROPORTIONAL_GAIN = 2
         self.DERIVATIVE_GAIN = 0
-        self.DRIVE_SPEED = 150
+        self.DRIVE_SPEED = 250
         self.AREA_WIDTH = 954
         self.found_red = False
         self.found_white = False
         self.drive_distance = 700
         self.last_error = 0
+        self.last_distance = None
+        self.wrong_distance_count = 0
+        
 
     def reset(self, robot):
         robot.stop()
         self.state = State.START
+        self.target_distance_to_wall = 740
         self.found_red = False
         self.found_white = False
-        self.drive_distance = 710
+        self.drive_distance = 700
         self.last_error = 0
         robot.reset_distance_and_angle()
         self.finished = False
+        self.last_distance = None
+        self.wrong_distance_count = 0
 
     def run_one_step(self, robot):
 
         if self.found_red and self.found_white:
             self.finished = True
-            robot.drive(0, 800)
-            for _ in range(6):
-                wait(500)
-                robot.set_gripper_and_ultrasonic_angle(90, turn_speed=250, wait=False)
-                wait(500)
-                robot.set_gripper_and_ultrasonic_angle(0, turn_speed=250, wait=False)
             return
 
         if self.state == State.START:
             self.update_screen(robot)
             robot.set_gripper_and_ultrasonic_angle(0)
-            robot.straight(100)
-            robot.gyro_sensor.reset_angle(0)
+            robot.straight(100)                             # move an inch forward to avoid reading the wrong wall with the ultrasonic sensor
+            robot.gyro_sensor.reset_angle(0)                # using gyro to turn accurately (not as accurate as hoped)
             robot.reset_distance_and_angle()
             self.state = State.FOLLOW_WEST_WALL
             self.update_screen(robot)
@@ -67,58 +67,63 @@ class SectionSearchColorFields(Section):
 
         self.pd_regler(robot)
 
+        # robot.stop()              # Alternative for turning?
+        # robot.spin(45)
+        # robot.straight(50)
+        # robot.spin(45)
+
         if self.state == State.FOLLOW_WEST_WALL:
             if ((robot.driven_distance() > self.drive_distance) or robot.touch_sensor.pressed()):
-                robot.drive(45,-45*2.2)
+                robot.drive(30,-30*2.2)                        # first part of turn fast
                 while robot.gyro_sensor.angle() > -165:
                     pass
-                print(" = " + str(self.AREA_WIDTH) + " - " + str(self.target_distance_to_wall) + " - 90")
+                robot.drive(10,-10*2.2)                        # last degrees slow for accuracy
+                while robot.gyro_sensor.angle() > -178:
+                    pass
+                self.last_distance = None
                 self.target_distance_to_wall = self.AREA_WIDTH - self.target_distance_to_wall - 70                  # - 90
                 self.state = State.FOLLOW_EAST_WALL
                 self.update_screen(robot)
-                self.drive_distance = 590
+                self.drive_distance = 570
                 robot.reset_distance_and_angle()
-                print(str(self.target_distance_to_wall))
-                print(str(robot.ultrasonic_sensor.distance()))
            
         elif self.state == State.FOLLOW_EAST_WALL:
             if ((robot.driven_distance() > self.drive_distance) or robot.touch_sensor.pressed()):
-                robot.drive(45,45*2)
+                robot.drive(30,30*2)
                 while robot.gyro_sensor.angle() < -15:
                     pass
+                robot.drive(10,10*2.2)
+                while robot.gyro_sensor.angle() < -2:
+                    pass
+                self.last_distance = None
                 self.target_distance_to_wall = self.AREA_WIDTH - self.target_distance_to_wall - 180                  # - 190
                 self.state = State.FOLLOW_WEST_WALL
                 self.update_screen(robot)
                 robot.reset_distance_and_angle()
-                print(str(self.target_distance_to_wall))
-                print(str(robot.ultrasonic_sensor.distance()))
 
     def pd_regler(self, robot):
         distance_to_wall = robot.ultrasonic_sensor.distance()
+        self.stupid_wrong_distance_value_avoider(distance_to_wall)      #  would love to delete this part, but ultrasonic sensor values are super random sometimes
+        
         error = distance_to_wall - self.target_distance_to_wall
         derivative = error - self.last_error
         self.last_error = error
         correction = (error * self.PROPORTIONAL_GAIN) + (derivative * self.DERIVATIVE_GAIN)
-
-        # if (distance_to_wall < self.target_distance_to_wall - 30 or distance_to_wall > self.target_distance_to_wall + 30):
-        #     if (robot.angle_turned() > 0):
-        #         print("1")
-        #         correction = -3
-        #     else:
-        #         print("2")
-        #         correction = 3
-        # else:
-        #     if (robot.angle_turned() > 10 and correction > 0):
-        #         print("3")
-        #         correction = 0
-        #     elif (robot.angle_turned() < -10 and correction < 0):
-        #         print("4")
-        #         correction = 0
-
         robot.drive(drive_speed=self.DRIVE_SPEED, turn_rate=-correction)
-        print("dist: " + str(distance_to_wall) + "  target: " + str(self.target_distance_to_wall) + "  error: " + str(error) + "  correction: " + str(-correction))
 
-    def check_for_red_colorfield(self, robot, r, g, b):             #TODO
+    def stupid_wrong_distance_value_avoider(self, distance_to_wall):    # shouldn't be necessary, but ultrasonic sensor sometimes gives totally wrong values
+        if not self.last_distance:
+            self.last_distance = distance_to_wall
+        if abs(distance_to_wall - self.last_distance) > 100:
+            robot.drive(0,0)
+            if self.wrong_distance_count > 100:
+                self.wrong_distance_count = 0
+                self.last_distance = distance_to_wall
+            self.wrong_distance_count += 1
+            return    
+        self.last_distance = distance_to_wall
+
+    def check_for_red_colorfield(self, robot, r, g, b):
         is_red = r>15 and g<12 and b<8
         if is_red:
             self.found_red = True
@@ -126,7 +131,7 @@ class SectionSearchColorFields(Section):
             robot.ev3.speaker.beep()
         return is_red
 
-    def check_for_white_colorfield(self, robot, r, g, b):           #TODO
+    def check_for_white_colorfield(self, robot, r, g, b):
         reflection = (r + g + b) / 3
         is_white = reflection > 76
         if is_white:

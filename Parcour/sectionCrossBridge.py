@@ -2,7 +2,7 @@ from .section import Section
 from pybricks.parameters import Port, Stop, Direction
 from pybricks.tools import wait
 
-class SectionCrossBridge(Section):
+class SectionCrossBridge(Section):      # done by Mattis
 
     def __init__(self):
         super().__init__()
@@ -45,7 +45,6 @@ class SectionCrossBridge(Section):
             robot.drive(0,0)
             self.unreasonable_ultrasonic_count += 1
             if self.unreasonable_ultrasonic_count > 1000:
-                print("Ultrasonic Sensor Value not reasonable, resetting gripper and ultrasonic angle")
                 robot.set_gripper_and_ultrasonic_angle(60, turn_speed=130, wait=True)  # Ultrasonic Sensor ausfahren
                 robot.set_gripper_and_ultrasonic_angle(100, turn_speed=130, wait=True)  # Ultrasonic Sensor einfahren
                 self.unreasonable_ultrasonic_count = 0
@@ -93,7 +92,6 @@ class SectionCrossBridge(Section):
         self.state_index += 1
         self.state = self.states[self.state_index]
         self.sectionStarted = False
-        print("Next State: " + self.state)
         self.robot.ev3.speaker.beep()
 
     def p_controll(self, robot, target_value=80, prop_gain=1, speed=50):
@@ -133,7 +131,6 @@ class SectionCrossBridge(Section):
     def turn_in_on_left_edge(self, robot):
         if len(self.errors) >= 10:
             last_error_avg = abs(sum(self.errors[-20:]) / 20)
-            print("Last 10 errors average: ", last_error_avg)
             if last_error_avg < 4:
                 self.next_state()
                 return

@@ -15,7 +15,7 @@ iterantion = 0
 
 while True:
     iterantion += 1
-    if iterantion % 25 == 0:
+    if iterantion % 25 == 0:            # just check every 25th time, for more iterations per second 24 out of 25 times
         menu.check_buttonpress()
     if course.running:
         course.run_one_step(robot)

@@ -16,7 +16,7 @@ class Parcour:
         self.running = False
         self.menu = None
 
-    def set_menu(self, observer):                       # Observer-Listerner-Pattern um zyklische Abhängigkeit zu umgehen
+    def set_menu(self, observer):                       # Observer-Listerner-Pattern to avoid cyclic dependency
         self.menu = observer
 
     def get_section_name(self, section_index):

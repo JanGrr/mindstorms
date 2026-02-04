@@ -4,14 +4,14 @@ from pybricks.parameters import Stop, Color
 
 import time
 
-class SectionMoveObject(Section):
+class SectionMoveObject(Section):          # done by Micha
     
     def __init__(self):
         super().__init__()
 
         self.name = "Move Object" 
         #Drive Base Einstellungen
-        self.speed = 230 # Vorwärtsgeschwindigkeit
+        self.speed = 300 # Vorwärtsgeschwindigkeit
         self.turn_acceleration = 300
         self.straight_acceleration = 300
         self.turn_rate = 100
@@ -41,11 +41,12 @@ class SectionMoveObject(Section):
         self.last_time = time.time()
         self.turned = False
         self.finished = False
+        self.state = 0
         robot.drive_base.stop()
+        robot.reset_drive_base_settings()
 
     def goto_state(self, new_state):
-        self.state = new_state
-        print("nowInState:", new_state)   
+        self.state = new_state  
     
 
     def run_one_step(self, robot):
@@ -90,7 +91,6 @@ class SectionMoveObject(Section):
         if self.state == 2:
             robot.drive(80, 120)
             robot.base_rgb = robot.color_sensor.rgb()
-            print("Base RGB set to:", robot.base_rgb)
             while robot.angle_turned() < 80:
                 pass
             robot.reset_distance_and_angle()
@@ -143,16 +143,13 @@ class SectionMoveObject(Section):
 
         if self.state == 6:
             dist = robot.ultrasonic_sensor.distance()
-            print(dist)
             robot.spin(5)
             dist2 = robot.ultrasonic_sensor.distance()
-            print("Zweite", dist2)
             while dist2 < dist:
                 dist = dist2
                 robot.spin(5)
                 dist2 = robot.ultrasonic_sensor.distance()
-                print("Zweite", dist2)
-
+            robot.spin(3)
             robot.ev3.speaker.beep()
             self.goto_state(7)
             
@@ -185,11 +182,9 @@ class SectionMoveObject(Section):
 
         if self.state == 8:
             detectedColor = robot.color_sensor.rgb()
-            print("Detected Color RGB:", detectedColor)
-            print("Base Color RGB:", robot.base_rgb)
             base_r, base_g, base_b = robot.base_rgb
             relative_blue_change = (detectedColor[2] - base_b) / max(base_b, 1)
-            if relative_blue_change > 3 and detectedColor[0] < 20:
+            if relative_blue_change > 2.5 and detectedColor[0] < 20:
                 detectedColor = Color.BLUE
                 robot.drive_base.stop()
                 robot.ev3.speaker.beep()
